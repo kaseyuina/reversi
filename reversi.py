@@ -42,10 +42,57 @@ class Board:
  
         # Current color
         self.CurrentColor = DARK
+    
+    """
+    Applying changes on the board by placing disks
+    """
+    def flipDisks(self, y, x):
+ 
+        # Placing disk
+        self.RawBoard[y, x] = self.CurrentColor
+ 
+        # Fliping process will continue below
+        # …
 
+    """
+    Placing disk
+    """
+    def place_disk(self, x, y):
+ 
+        # Validating square position
+        if x < 1 or BOARD_SIZE < x:
+            return False
+        if y < 1 or BOARD_SIZE < y:
+            return False
+        # if self.ValidPos[x, y] == 0:
+            # return False
+ 
+        # Fliping disk
+        self.flipDisks(x, y)
+ 
+        # Next turn
+        self.Turns += 1
+ 
+        # Switching color
+        self.CurrentColor = - self.CurrentColor
+        
+        # Updating ValidPos and ValidDir
+        # self.initValidation()
+ 
+        return True
+    
 
 # Creating board instance
 board = Board()
  
 # Checking contents of RawBoard
-print(board.RawBoard)
+# print(board.RawBoard)
+
+# Calling place_disk function
+print(board.place_disk(4, 3))
+
+# Checking contents of RawBoard
+for y in range(10):
+    for x in range(10):
+        print('{:^3}'.format(board.RawBoard[x, y]), end = '')
+    print()
