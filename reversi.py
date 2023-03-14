@@ -14,6 +14,17 @@ WALL = 2
  
 # Size of the board
 BOARD_SIZE = 8
+
+# Direction(binary)
+NONE = 0
+LEFT = 2**0 # =1
+UPPER_LEFT = 2**1 # =2 
+UPPER = 2**2 # =4
+UPPER_RIGHT = 2**3 # =8
+RIGHT = 2**4 # =16
+LOWER_RIGHT = 2**5 # =32
+LOWER = 2**6 # =64
+LOWER_LEFT = 2**7 # =128
  
 """
 Board class
@@ -42,6 +53,145 @@ class Board:
  
         # Current color
         self.CurrentColor = DARK
+    
+        # 置ける場所と石が返る方向
+        self.ValidPos = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
+        self.ValidDir = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
+ 
+        # ValidPosとValidDirを初期化
+        self.initValidation()
+    
+    """
+    Checking which direction disks can flip
+    """
+    def checkValidation(self, x, y, color):
+ 
+        # Stores direction
+        dir = 0
+ 
+        # Invalid when disk already exists
+        if(self.RawBoard[x, y] != EMPTY):
+            return dir
+ 
+        ## Left
+        if(self.RawBoard[x - 1, y] == - color): #Checking if the other color exists
+            
+            x_tmp = x - 2
+            y_tmp = y
+ 
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp -= 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | LEFT
+ 
+        ## Upper left
+        if(self.RawBoard[x - 1, y - 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x - 2
+            y_tmp = y - 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp -= 1
+                y_tmp -= 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | UPPER_LEFT
+ 
+        ## Upper
+        if(self.RawBoard[x, y - 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x
+            y_tmp = y - 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                y_tmp -= 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | UPPER
+ 
+        ## Upper right
+        if(self.RawBoard[x + 1, y - 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x + 2
+            y_tmp = y - 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp += 1
+                y_tmp -= 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | UPPER_RIGHT
+ 
+        ## Right
+        if(self.RawBoard[x + 1, y] == - color): #Checking if the other color exists
+ 
+            x_tmp = x + 2
+            y_tmp = y
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp += 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | RIGHT
+ 
+        ## Lower right
+        if(self.RawBoard[x + 1, y + 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x + 2
+            y_tmp = y + 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp += 1
+                y_tmp += 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | LOWER_RIGHT
+ 
+        ## Lower
+        if(self.RawBoard[x, y + 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x
+            y_tmp = y + 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                y_tmp += 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | LOWER
+ 
+        ## Lower left
+        if(self.RawBoard[x - 1, y + 1] == - color): #Checking if the other color exists
+            
+            x_tmp = x - 2
+            y_tmp = y + 2
+            
+            # Loops while the other color continues
+            while self.RawBoard[x_tmp, y_tmp] == - color:
+                x_tmp -= 1
+                y_tmp += 1
+            
+            # Update dir if self color sandwitches the other color
+            if self.RawBoard[x_tmp, y_tmp] == color:
+                dir = dir | LOWER_LEFT
+ 
+        return dir
+ 
+ 
     
     """
     Applying changes on the board by placing disks
@@ -77,7 +227,7 @@ class Board:
         self.CurrentColor = - self.CurrentColor
         
         # Updating ValidPos and ValidDir
-        # self.initValidation()
+        self.initValidation()
  
         return True
     
