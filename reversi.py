@@ -54,11 +54,11 @@ class Board:
         # Current color
         self.CurrentColor = DARK
     
-        # 置ける場所と石が返る方向
+        # Postion where disk can be placed and direction for flipping
         self.ValidPos = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
         self.ValidDir = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
  
-        # ValidPosとValidDirを初期化
+        # Initializing ValidPos and ValidDir
         self.initValidation()
     
     """
@@ -201,8 +201,130 @@ class Board:
         # Placing disk
         self.RawBoard[y, x] = self.CurrentColor
  
-        # Fliping process will continue below
-        # …
+        # Flipping disks
+        # Inputting dir in (y, x) in ValidDir
+        dir = self.ValidDir[x, y]
+ 
+        ## LEFT
+        if dir & LEFT: 
+ 
+            x_tmp = x - 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x_tmp, y] = self.CurrentColor
+ 
+                # Next loop to the LEFT
+                x_tmp -= 1
+ 
+        ## UPPER LEFT
+        if dir & UPPER_LEFT: 
+ 
+            x_tmp = x - 1
+            y_tmp = y - 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                
+                # Next loop to the UPPER LEFT
+                x_tmp -= 1
+                y_tmp -= 1
+ 
+        ## UPPER
+        if dir & UPPER: 
+ 
+            y_tmp = y - 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x, y_tmp] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x, y_tmp] = self.CurrentColor
+ 
+                # Next loop to the UPPER
+                y_tmp -= 1
+ 
+        ## UPPER RIGHT
+        if dir & UPPER_RIGHT: 
+ 
+            x_tmp = x + 1
+            y_tmp = y - 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+ 
+                # Next loop to the UPPER RIGHT
+                x_tmp += 1
+                y_tmp -= 1
+ 
+        ## RIGHT
+        if dir & RIGHT: 
+ 
+            x_tmp = x + 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x_tmp, y] = self.CurrentColor
+                
+                # Next loop to the RIGHT
+                x_tmp += 1
+ 
+        ## LOWER RIGHT
+        if dir & LOWER_RIGHT: 
+ 
+            x_tmp = x + 1
+            y_tmp = y + 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+ 
+                # Next loop to the LOWER RIGHT
+                x_tmp += 1
+                y_tmp += 1
+ 
+        ## LOWER
+        print(dir, LOWER)
+        if dir & LOWER: 
+ 
+            y_tmp = y + 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x, y_tmp] == - self.CurrentColor:
+ 
+                # Changing color
+                self.RawBoard[x, y_tmp] = self.CurrentColor
+ 
+                # Next loop to the LOWER
+                y_tmp += 1
+ 
+        ## LOWER LEFT
+        if dir & LOWER_LEFT: 
+ 
+            x_tmp = x - 1
+            y_tmp = y + 1
+ 
+            # Loops until hitting other color
+            while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
+                
+                # Changing color
+                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+ 
+                # Next loop to the LOWER LEFT
+                x_tmp -= 1
+                y_tmp += 1
 
     """
     Placing disk
@@ -214,10 +336,10 @@ class Board:
             return False
         if y < 1 or BOARD_SIZE < y:
             return False
-        # if self.ValidPos[x, y] == 0:
-            # return False
+        if self.ValidPos[x, y] == 0:
+            return False
  
-        # Fliping disk
+        # Flipping disk
         self.flipDisks(x, y)
  
         # Next turn
@@ -230,19 +352,55 @@ class Board:
         self.initValidation()
  
         return True
-    
+
+    """
+    Updating ValidPos and ValidDir
+    """
+    def initValidation(self):
+ 
+        # Initializing ValidPos (initialized to False for all)
+        self.ValidPos[:, :] = False
+ 
+        # Loops in all squares besides WALL
+        for x in range(1, BOARD_SIZE + 1):
+            for y in range(1, BOARD_SIZE + 1):
+ 
+                # Running checkValidation function
+                dir = self.checkValidation(x, y, self.CurrentColor)
+ 
+                # Inputting dir to ValidDir in each square
+                self.ValidDir[x, y] = dir
+ 
+                # Input True into ValidPos if dir is not 0
+                if dir != 0:
+                    self.ValidPos[x, y] = True
 
 # Creating board instance
 board = Board()
+
+# Placing a disk
+# if not board.place_disk(4, 3):
+if not board.place_disk(1, 3):
+    print('Invalid square')
  
-# Checking contents of RawBoard
-# print(board.RawBoard)
-
-# Calling place_disk function
-print(board.place_disk(4, 3))
-
-# Checking contents of RawBoard
+# Test
+# Confirming the contents of RawBoard
+print('RawBoard')
 for y in range(10):
     for x in range(10):
         print('{:^3}'.format(board.RawBoard[x, y]), end = '')
+    print()
+ 
+# Confirming the contents of ValidPos
+print('ValidPos')
+for y in range(10):
+    for x in range(10):
+        print('{:^3}'.format(board.ValidPos[x, y]), end = '')
+    print()
+ 
+# Confirming the contents of ValidDir
+print('ValidDir')
+for y in range(10):
+    for x in range(10):
+        print('{:^3}'.format(board.ValidDir[x, y]), end = '')
     print()
