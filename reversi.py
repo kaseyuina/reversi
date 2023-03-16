@@ -39,7 +39,6 @@ Board class
 class Board:
  
     def __init__(self):
- 
         # Set all the squares as empty
         self.RawBoard = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
  
@@ -82,7 +81,6 @@ class Board:
  
         ## Left
         if(self.RawBoard[x - 1, y] == - color): #Checking if the other color exists
-            
             x_tmp = x - 2
             y_tmp = y
  
@@ -96,7 +94,6 @@ class Board:
  
         ## Upper left
         if(self.RawBoard[x - 1, y - 1] == - color): #Checking if the other color exists
-            
             x_tmp = x - 2
             y_tmp = y - 2
             
@@ -111,7 +108,6 @@ class Board:
  
         ## Upper
         if(self.RawBoard[x, y - 1] == - color): #Checking if the other color exists
-            
             x_tmp = x
             y_tmp = y - 2
             
@@ -125,7 +121,6 @@ class Board:
  
         ## Upper right
         if(self.RawBoard[x + 1, y - 1] == - color): #Checking if the other color exists
-            
             x_tmp = x + 2
             y_tmp = y - 2
             
@@ -140,7 +135,6 @@ class Board:
  
         ## Right
         if(self.RawBoard[x + 1, y] == - color): #Checking if the other color exists
- 
             x_tmp = x + 2
             y_tmp = y
             
@@ -154,7 +148,6 @@ class Board:
  
         ## Lower right
         if(self.RawBoard[x + 1, y + 1] == - color): #Checking if the other color exists
-            
             x_tmp = x + 2
             y_tmp = y + 2
             
@@ -169,7 +162,6 @@ class Board:
  
         ## Lower
         if(self.RawBoard[x, y + 1] == - color): #Checking if the other color exists
-            
             x_tmp = x
             y_tmp = y + 2
             
@@ -183,7 +175,6 @@ class Board:
  
         ## Lower left
         if(self.RawBoard[x - 1, y + 1] == - color): #Checking if the other color exists
-            
             x_tmp = x - 2
             y_tmp = y + 2
             
@@ -197,16 +188,13 @@ class Board:
                 dir = dir | LOWER_LEFT
  
         return dir
- 
- 
     
     """
     Applying changes on the board by placing disks
     """
-    def flipDisks(self, y, x):
- 
+    def flipDisks(self, x, y):
         # Placing disk
-        self.RawBoard[y, x] = self.CurrentColor
+        self.RawBoard[x, y] = self.CurrentColor
  
         # Flipping disks
         # Inputting dir in (y, x) in ValidDir
@@ -214,7 +202,6 @@ class Board:
  
         ## LEFT
         if dir & LEFT: 
- 
             x_tmp = x - 1
  
             # Loops until hitting other color
@@ -228,7 +215,6 @@ class Board:
  
         ## UPPER LEFT
         if dir & UPPER_LEFT: 
- 
             x_tmp = x - 1
             y_tmp = y - 1
  
@@ -244,7 +230,6 @@ class Board:
  
         ## UPPER
         if dir & UPPER: 
- 
             y_tmp = y - 1
  
             # Loops until hitting other color
@@ -258,7 +243,6 @@ class Board:
  
         ## UPPER RIGHT
         if dir & UPPER_RIGHT: 
- 
             x_tmp = x + 1
             y_tmp = y - 1
  
@@ -274,7 +258,6 @@ class Board:
  
         ## RIGHT
         if dir & RIGHT: 
- 
             x_tmp = x + 1
  
             # Loops until hitting other color
@@ -288,7 +271,6 @@ class Board:
  
         ## LOWER RIGHT
         if dir & LOWER_RIGHT: 
- 
             x_tmp = x + 1
             y_tmp = y + 1
  
@@ -303,9 +285,8 @@ class Board:
                 y_tmp += 1
  
         ## LOWER
-        print(dir, LOWER)
+        # print(dir, LOWER)
         if dir & LOWER: 
- 
             y_tmp = y + 1
  
             # Loops until hitting other color
@@ -319,7 +300,6 @@ class Board:
  
         ## LOWER LEFT
         if dir & LOWER_LEFT: 
- 
             x_tmp = x - 1
             y_tmp = y + 1
  
@@ -388,27 +368,23 @@ class Board:
     def display(self):
  
         # columns
-        print('  a  b  c  d  e  f  g  h')
+        print('  a b c d e f g h')
         # Looping all columns
         for y in range(1, 9):
  
             # rows
-            print(y, end="")
+            print(str(y) + " ", end="")
             for x in range(1, 9):
-                print('{:^3}'.format(board.RawBoard[x, y]), end = '')
-            # Looping all rows
-            # for x in range(1, 9):
+                # Inputting a square status in "grid"
+                grid = self.RawBoard[x, y]
  
-            #     # Inputting a square status in "grid"
-            #     grid = self.RawBoard[x, y]
- 
-            #     # Changing square depending on the status
-            #     if grid == EMPTY: # Empty
-            #         print('□', end="")
-            #     elif grid == LIGHT: # Light
-            #         print('●', end="")
-            #     elif grid == DARK: # Dark
-            #         print('〇', end="")
+                # Changing square depending on the status
+                if grid == EMPTY: # Empty
+                    print('{:^2}'.format('□'), end = '')
+                elif grid == LIGHT: # Light
+                    print('{:^2}'.format('●'), end = '')
+                elif grid == DARK: # Dark
+                    print('{:^2}'.format('○'), end = '')
  
             print()
         print()
@@ -417,9 +393,8 @@ class Board:
     Validating the input address
     """
     def inputValidation(self, IN):
- 
-        # Blank check
-        if not IN:
+        # Length check
+        if not len(IN) == 2:
             return False
  
         # Checking if the first and second letters in IN are valid
@@ -498,10 +473,12 @@ while True:
         y = IN_NUMBER.index(IN[1]) + 1
     else:
         print('Please input in the correct format (e.g.: f5)')
+        continue
 
     # Placing a disk
     if not board.place_disk(x, y):
         print('Invalid address')
+        continue
     
     # Game over check
     if board.isGameOver():
