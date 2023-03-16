@@ -25,7 +25,14 @@ RIGHT = 2**4 # =16
 LOWER_RIGHT = 2**5 # =32
 LOWER = 2**6 # =64
 LOWER_LEFT = 2**7 # =128
+
+# Board address
+IN_ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+IN_NUMBER = ['1', '2', '3', '4', '5', '6', '7', '8']
  
+# Maximum turns
+MAX_TURNS = 60
+
 """
 Board class
 """
@@ -375,32 +382,178 @@ class Board:
                 if dir != 0:
                     self.ValidPos[x, y] = True
 
+    """
+    Displaying board
+    """
+    def display(self):
+ 
+        # columns
+        print('  a  b  c  d  e  f  g  h')
+        # Looping all columns
+        for y in range(1, 9):
+ 
+            # rows
+            print(y, end="")
+            for x in range(1, 9):
+                print('{:^3}'.format(board.RawBoard[x, y]), end = '')
+            # Looping all rows
+            # for x in range(1, 9):
+ 
+            #     # Inputting a square status in "grid"
+            #     grid = self.RawBoard[x, y]
+ 
+            #     # Changing square depending on the status
+            #     if grid == EMPTY: # Empty
+            #         print('□', end="")
+            #     elif grid == LIGHT: # Light
+            #         print('●', end="")
+            #     elif grid == DARK: # Dark
+            #         print('〇', end="")
+ 
+            print()
+        print()
+        
+    """
+    Validating the input address
+    """
+    def inputValidation(self, IN):
+ 
+        # Blank check
+        if not IN:
+            return False
+ 
+        # Checking if the first and second letters in IN are valid
+        if IN[0] in IN_ALPHABET:
+            if IN[1] in IN_NUMBER:
+                return True
+ 
+        return False
+
+    """
+    Game over check
+    """
+    def isGameOver(self):
+ 
+        # Game is over when reaches to 60 turns
+        if self.Turns >= MAX_TURNS:
+            return True
+ 
+        # Game is not over if there is any open square during own turn
+        if self.ValidPos[:, :].any():
+            return False
+ 
+        # Game is not over if there is any open square during the other's turn
+        for x in range(1, BOARD_SIZE + 1):
+            for y in range(1, BOARD_SIZE + 1):
+ 
+                # Game is not over if there is any open square
+                if self.checkValidation(x, y, - self.CurrentColor) != 0:
+                    return False
+ 
+        # Game is over when reaching to this point
+        return True
+
+
+'''
+Main code
+'''
 # Creating board instance
 board = Board()
 
-# Placing a disk
-# if not board.place_disk(4, 3):
-if not board.place_disk(1, 3):
-    print('Invalid square')
+"""
+# For testing
+board.RawBoard = np.array([
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1,-1,-1, 1, 1, 1, 1, 2],
+    [2, 1, 1,-1,-1,-1, 1,-1, 1, 2],
+    [2, 1, 1, 1,-1, 1, 1, 1, 1, 2],
+    [2, 1, 1,-1, 1,-1,-1, 0, 1, 2],
+    [2, 1,-1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 0,-1,-1,-1,-1, 1, 1, 2],
+    [2, 1, 0, 0, 0, 0,-1, 1, 1, 2],
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
+board.initValidation()
+"""
+
+# Displaying the board
+board.display()
+
+# Looping turns
+while True:
+    # Displaying the board
+    board.display()
  
+    # Showing turns
+    if board.CurrentColor == DARK:
+        print("Dark's turn: ", end = "")
+    else:
+        print("Light's turn: ", end = "")
+    IN = input()
+    print()
+
+    # Input validation
+    if board.inputValidation(IN):
+        x = IN_ALPHABET.index(IN[0]) + 1
+        y = IN_NUMBER.index(IN[1]) + 1
+    else:
+        print('Please input in the correct format (e.g.: f5)')
+
+    # Placing a disk
+    if not board.place_disk(x, y):
+        print('Invalid address')
+    
+    # Game over check
+    if board.isGameOver():
+        board.display()
+        print('Game over')
+        break
+
+    # Pass
+    if not board.ValidPos[:, :].any():
+        board.CurrentColor = - board.CurrentColor
+        board.initValidation()
+        print('Turn passed')
+        print()
+        continue
+
+# Displaying the result
+print()
+    
+## Number of each color
+count_dark = np.count_nonzero(board.RawBoard[:, :] == DARK)
+count_light = np.count_nonzero(board.RawBoard[:, :] == LIGHT)
+    
+print('Dark:  ', count_dark)
+print('Light: ', count_light)
+ 
+## Result
+dif = count_dark - count_light
+if dif > 0:
+    print('Dark won the game!')
+elif dif < 0:
+    print('Light won the game!')
+else:
+    print('Draw game!')
+
 # Test
 # Confirming the contents of RawBoard
-print('RawBoard')
-for y in range(10):
-    for x in range(10):
-        print('{:^3}'.format(board.RawBoard[x, y]), end = '')
-    print()
+# print('RawBoard')
+# for y in range(10):
+#     for x in range(10):
+#         print('{:^3}'.format(board.RawBoard[x, y]), end = '')
+#     print()
  
-# Confirming the contents of ValidPos
-print('ValidPos')
-for y in range(10):
-    for x in range(10):
-        print('{:^3}'.format(board.ValidPos[x, y]), end = '')
-    print()
+# # Confirming the contents of ValidPos
+# print('ValidPos')
+# for y in range(10):
+#     for x in range(10):
+#         print('{:^3}'.format(board.ValidPos[x, y]), end = '')
+#     print()
  
-# Confirming the contents of ValidDir
-print('ValidDir')
-for y in range(10):
-    for x in range(10):
-        print('{:^3}'.format(board.ValidDir[x, y]), end = '')
-    print()
+# # Confirming the contents of ValidDir
+# print('ValidDir')
+# for y in range(10):
+#     for x in range(10):
+#         print('{:^3}'.format(board.ValidDir[x, y]), end = '')
+#     print()
