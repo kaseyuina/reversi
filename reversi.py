@@ -90,28 +90,28 @@ class Board:
 
         # Initializing reversi
         self.initReversi()
-        self.RawBoard = np.array([
-            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-            [2, 1, 1, 1, 1, 1, 1, 1, 1, 2],
-            [2, 1, 1,-1,-1, 1, 1, 1, 1, 2],
-            [2, 1, 1,-1,-1,-1, 1,-1, 1, 2],
-            [2, 1, 1, 1,-1, 1, 1, 1, 1, 2],
-            [2, 1, 1,-1, 1,-1,-1, 0, 1, 2],
-            [2, 1,-1, 1, 1, 1, 1, 1, 1, 2],
-            [2, 1, 0,-1,-1,-1,-1, 1, 1, 2],
-            [2, 1, 0, 0, 0, 0,-1, 1, 1, 2],
-            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
-        for y in range(10):
-            for x in range(10):
-                # print(self.RawBoard[x, y])
-                if self.RawBoard[x, y] != 2:
-                    if self.RawBoard[x, y] != 0:
-                        self.drawDisk(x-1, y-1, self.RawBoard[x, y])
+        # self.RawBoard = np.array([
+        #     [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        #     [2, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+        #     [2, 1, 1,-1,-1, 1, 1, 1, 1, 2],
+        #     [2, 1, 1,-1,-1,-1, 1,-1, 1, 2],
+        #     [2, 1, 1, 1,-1, 1, 1, 1, 1, 2],
+        #     [2, 1, 1,-1, 1,-1,-1, 0, 1, 2],
+        #     [2, 1,-1, 1, 1, 1, 1, 1, 1, 2],
+        #     [2, 1, 0,-1,-1,-1,-1, 1, 1, 2],
+        #     [2, 1, 0, 0, 0, 0,-1, 1, 1, 2],
+        #     [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
+        # for y in range(10):
+        #     for x in range(10):
+        #         # print(self.RawBoard[x, y])
+        #         if self.RawBoard[x, y] != 2:
+        #             if self.RawBoard[x, y] != 0:
+        #                 self.drawDisk(x-1, y-1, self.RawBoard[x, y])
 
         # self.CurrentColor = LIGHT
         # message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
         # self.message_label.config(text=message)
-        self.initValidation()
+        # self.initValidation()
 
     def testBoard(self):
         print('RawBoard')
