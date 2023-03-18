@@ -1,7 +1,7 @@
 """ Library """
 import numpy as np
-import tkinter
-import tkinter.messagebox
+import tkinter as tk
+import tkinter.messagebox as mbox
  
 """ Variables """
 # Square status
@@ -47,6 +47,10 @@ class Board:
             DARK : DARK_COLOR,
             LIGHT : LIGHT_COLOR
         }
+        self.strColor = {
+            DARK : "DARK",
+            LIGHT : "LIGHT"
+        }
 
         # Set all the squares as empty
         self.RawBoard = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
@@ -62,6 +66,8 @@ class Board:
         # self.RawBoard[5, 5] = LIGHT
         # self.RawBoard[4, 5] = DARK
         # self.RawBoard[5, 4] = DARK
+
+
  
         # Turns
         self.Turns = 0
@@ -84,6 +90,28 @@ class Board:
 
         # Initializing reversi
         self.initReversi()
+        self.RawBoard = np.array([
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [2, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+            [2, 1, 1,-1,-1, 1, 1, 1, 1, 2],
+            [2, 1, 1,-1,-1,-1, 1,-1, 1, 2],
+            [2, 1, 1, 1,-1, 1, 1, 1, 1, 2],
+            [2, 1, 1,-1, 1,-1,-1, 0, 1, 2],
+            [2, 1,-1, 1, 1, 1, 1, 1, 1, 2],
+            [2, 1, 0,-1,-1,-1,-1, 1, 1, 2],
+            [2, 1, 0, 0, 0, 0,-1, 1, 1, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]])
+        for y in range(10):
+            for x in range(10):
+                # print(self.RawBoard[x, y])
+                if self.RawBoard[x, y] != 2:
+                    if self.RawBoard[x, y] != 0:
+                        self.drawDisk(x-1, y-1, self.RawBoard[x, y])
+
+        # self.CurrentColor = LIGHT
+        # message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
+        # self.message_label.config(text=message)
+        self.initValidation()
 
     def testBoard(self):
         print('RawBoard')
@@ -109,9 +137,13 @@ class Board:
     
     ''' Creating widget '''
     def createWidgets(self):
+        # Showing initial message
+        message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
+        self.message_label = tk.Message(self.master, text=message, font=("Arial", 14), fg="white", width=CANVAS_SIZE, anchor="w")
+        self.message_label.pack()
 
         # Creating canvas
-        self.canvas = tkinter.Canvas(
+        self.canvas = tk.Canvas(
             self.master,
             bg=BOARD_COLOR,
             width=CANVAS_SIZE+1, # +1 is for drawing line
@@ -158,6 +190,10 @@ class Board:
             (dark_init_pos_1_x, dark_init_pos_1_y),
             (dark_init_pos_2_x, dark_init_pos_2_y)
         )
+        # print(dark_init_pos_1_x)
+        # print(dark_init_pos_1_y)
+        # print(dark_init_pos_2_x)
+        # print(dark_init_pos_2_y)
 
         # Drawing disks
         for x, y in dark_init_pos:
@@ -206,6 +242,36 @@ class Board:
         # Storing the color to the board
         self.RawBoard[x+1][y+1] = store_color
 
+    def showPopup(self, input):
+        # Getting window position
+        w = self.master.winfo_width()
+        h = self.master.winfo_height()
+        x1 = self.master.winfo_rootx()
+        y1 = self.master.winfo_rooty()
+        x2 = x1 + w
+        y2 = y1 + h
+
+        # Defining popup
+        popup = tk.Toplevel(self.master)
+        popup.title("")
+        pw = 200
+        ph = 30
+        popup.wm_attributes("-topmost", True)
+        popup.focus_force()
+        popup.grab_set()
+        popup.geometry(str(pw) + "x" + str(ph))
+
+        # Showing popup in the middle of the window
+        x = (x1 + x2) / 2 - pw / 2
+        y = (y1 + y2) / 2 - ph / 2
+        popup.geometry("+%d+%d" % (x, y))
+        message = tk.Label(popup, text=input, width=CANVAS_SIZE)
+        message.pack()
+        
+        # Closing the popup in 1 second
+        popup.after(1500, popup.destroy)
+            
+        
     def click(self, event):
         ''' Operation when the board is clicked '''
 
@@ -217,10 +283,25 @@ class Board:
         x = event.x // self.square_size + 1
         y = event.y // self.square_size + 1
 
-        # if self.checkPlacable(x, y):
-        # print(self.ValidPos[x,y])
+        # Placing a disk
         if not self.place_disk(x, y):
-            print('Invalid address')
+            # print('Invalid address')
+            self.showPopup('Invalid square')
+
+        # self.display()
+
+        # Game over check
+        if self.isGameOver():
+            self.display()
+            print('Game over')
+
+        # Pass
+        if not self.ValidPos[:, :].any():
+            self.CurrentColor = - self.CurrentColor
+            message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
+            self.message_label.config(text=message)
+            self.initValidation()
+            self.showPopup(self.strColor[self.CurrentColor] + "'s turn passed")
         
     """ Checking which direction disks can flip """
     def checkValidation(self, x, y, color):
@@ -494,6 +575,9 @@ class Board:
         
         # Updating ValidPos and ValidDir
         self.initValidation()
+
+        message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
+        self.message_label.config(text=message)
  
         return True
 
@@ -578,7 +662,7 @@ class Board:
         return True
 
 
-app = tkinter.Tk()
+app = tk.Tk()
 app.title('Reversi')
 reversi = Board(app)
 app.mainloop()
