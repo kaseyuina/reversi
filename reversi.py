@@ -288,15 +288,64 @@ class Board:
             # print('Invalid address')
             self.showPopup('Invalid square')
 
-        # self.display()
-
         # Game over check
-        if self.isGameOver():
-            self.display()
-            print('Game over')
+        elif self.isGameOver():
+            # # Displaying the result
+                
+            ## Number of each color
+            count_dark = np.count_nonzero(self.RawBoard[:, :] == DARK)
+            count_light = np.count_nonzero(self.RawBoard[:, :] == LIGHT)
+                
+            dark_result = 'Dark:  ' + str(count_dark)
+            light_result = 'Light: ' + str(count_light)
+            
+            ## Result
+            dif = count_dark - count_light
+            if dif > 0:
+                result_msg = 'Dark won the game!'
+            elif dif < 0:
+                result_msg = 'Light won the game!'
+            else:
+                result_msg = 'Draw game!'
+
+            # Getting window position
+            w = self.master.winfo_width()
+            h = self.master.winfo_height()
+            x1 = self.master.winfo_rootx()
+            y1 = self.master.winfo_rooty()
+            x2 = x1 + w
+            y2 = y1 + h
+
+            popup = tk.Toplevel(self.master)
+            popup.title("Result")
+            pw = 220
+            ph = 200
+            popup.wm_attributes("-topmost", True)
+            popup.focus_force()
+            popup.grab_set()
+            popup.geometry(str(pw) + "x" + str(ph))
+
+            # Showing popup in the middle of the window
+            x = (x1 + x2) / 2 - pw / 2
+            y = (y1 + y2) / 2 - ph / 2
+            popup.geometry("+%d+%d" % (x, y))
+            message = tk.Label(popup, text=dark_result, width=CANVAS_SIZE)
+            message.pack()
+            message = tk.Label(popup, text=light_result, width=CANVAS_SIZE)
+            message.pack()
+            message = tk.Label(popup, text=" ", width=CANVAS_SIZE)
+            message.pack()
+            message = tk.Label(popup, text=result_msg, font=("Arial", 18), width=CANVAS_SIZE)
+            message.pack()
+            message = tk.Label(popup, text=" ", width=CANVAS_SIZE)
+            message.pack()
+            def button_click():
+                self.master.destroy()
+            button = tk.Button(popup, text="Close", command=button_click)
+            button.pack()
 
         # Pass
-        if not self.ValidPos[:, :].any():
+        elif not self.ValidPos[:, :].any():
             self.CurrentColor = - self.CurrentColor
             message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
             self.message_label.config(text=message)
@@ -669,7 +718,7 @@ app.mainloop()
 
 ''' Main code '''
 # Creating board instance
-board = Board()
+# board = Board()
 
 """
 # For testing
@@ -687,67 +736,67 @@ board.RawBoard = np.array([
 board.initValidation()
 """
 
-# Displaying the board
-board.display()
+# # Displaying the board
+# board.display()
 
-# Looping turns
-while True:
-    # Displaying the board
-    board.display()
+# # Looping turns
+# while True:
+#     # Displaying the board
+#     board.display()
  
-    # Showing turns
-    if board.CurrentColor == DARK:
-        print("Dark's turn: ", end = "")
-    else:
-        print("Light's turn: ", end = "")
-    IN = input()
-    print()
+#     # Showing turns
+#     if board.CurrentColor == DARK:
+#         print("Dark's turn: ", end = "")
+#     else:
+#         print("Light's turn: ", end = "")
+#     IN = input()
+#     print()
 
-    # Input validation
-    if board.inputValidation(IN):
-        x = IN_ALPHABET.index(IN[0]) + 1
-        y = IN_NUMBER.index(IN[1]) + 1
-    else:
-        print('Please input in the correct format (e.g.: f5)')
-        continue
+#     # Input validation
+#     if board.inputValidation(IN):
+#         x = IN_ALPHABET.index(IN[0]) + 1
+#         y = IN_NUMBER.index(IN[1]) + 1
+#     else:
+#         print('Please input in the correct format (e.g.: f5)')
+#         continue
 
-    # Placing a disk
-    if not board.place_disk(x, y):
-        print('Invalid address')
-        continue
+#     # Placing a disk
+#     if not board.place_disk(x, y):
+#         print('Invalid address')
+#         continue
     
-    # Game over check
-    if board.isGameOver():
-        board.display()
-        print('Game over')
-        break
+#     # Game over check
+#     if board.isGameOver():
+#         board.display()
+#         print('Game over')
+#         break
 
-    # Pass
-    if not board.ValidPos[:, :].any():
-        board.CurrentColor = - board.CurrentColor
-        board.initValidation()
-        print('Turn passed')
-        print()
-        continue
+#     # Pass
+#     if not board.ValidPos[:, :].any():
+#         board.CurrentColor = - board.CurrentColor
+#         board.initValidation()
+#         print('Turn passed')
+#         print()
+#         continue
 
-# Displaying the result
-print()
+# # Displaying the result
+# print()
     
-## Number of each color
-count_dark = np.count_nonzero(board.RawBoard[:, :] == DARK)
-count_light = np.count_nonzero(board.RawBoard[:, :] == LIGHT)
+# ## Number of each color
+# count_dark = np.count_nonzero(board.RawBoard[:, :] == DARK)
+# count_light = np.count_nonzero(board.RawBoard[:, :] == LIGHT)
     
-print('Dark:  ', count_dark)
-print('Light: ', count_light)
+# print('Dark:  ', count_dark)
+# print('Light: ', count_light)
  
-## Result
-dif = count_dark - count_light
-if dif > 0:
-    print('Dark won the game!')
-elif dif < 0:
-    print('Light won the game!')
-else:
-    print('Draw game!')
+# ## Result
+# dif = count_dark - count_light
+# if dif > 0:
+#     print('Dark won the game!')
+# elif dif < 0:
+#     print('Light won the game!')
+# else:
+#     print('Draw game!')
 
 # Test
 # Confirming the contents of RawBoard
