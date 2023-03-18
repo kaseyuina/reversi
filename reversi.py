@@ -1,11 +1,9 @@
-"""
-Library
-"""
+""" Library """
 import numpy as np
+import tkinter
+import tkinter.messagebox
  
-"""
-Variables
-"""
+""" Variables """
 # Square status
 EMPTY = 0
 LIGHT = -1
@@ -14,6 +12,7 @@ WALL = 2
  
 # Size of the board
 BOARD_SIZE = 8
+CANVAS_SIZE = 400
 
 # Direction(binary)
 NONE = 0
@@ -33,12 +32,22 @@ IN_NUMBER = ['1', '2', '3', '4', '5', '6', '7', '8']
 # Maximum turns
 MAX_TURNS = 60
 
-"""
-Board class
-"""
+# Color setting
+BOARD_COLOR = 'green'
+DARK_COLOR = 'black'
+LIGHT_COLOR = 'white'
+
+
+""" Board class """
 class Board:
- 
-    def __init__(self):
+    def __init__(self, master):
+        #Parent wedget
+        self.master = master
+        self.color = { # Dictionary to hold disk color
+            DARK : DARK_COLOR,
+            LIGHT : LIGHT_COLOR
+        }
+
         # Set all the squares as empty
         self.RawBoard = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
  
@@ -48,11 +57,11 @@ class Board:
         self.RawBoard[BOARD_SIZE + 1, :] = WALL
         self.RawBoard[:, BOARD_SIZE + 1] = WALL
  
-        # Initial disk placement
-        self.RawBoard[4, 4] = LIGHT
-        self.RawBoard[5, 5] = LIGHT
-        self.RawBoard[4, 5] = DARK
-        self.RawBoard[5, 4] = DARK
+        # # Initial disk placement
+        # self.RawBoard[4, 4] = LIGHT
+        # self.RawBoard[5, 5] = LIGHT
+        # self.RawBoard[4, 5] = DARK
+        # self.RawBoard[5, 4] = DARK
  
         # Turns
         self.Turns = 0
@@ -66,10 +75,154 @@ class Board:
  
         # Initializing ValidPos and ValidDir
         self.initValidation()
+
+        # Creating widgets
+        self.createWidgets()
+
+        # Setting events
+        self.setEvents()
+
+        # Initializing reversi
+        self.initReversi()
+
+    def testBoard(self):
+        print('RawBoard')
+        for y in range(10):
+            for x in range(10):
+                print('{:^3}'.format(self.RawBoard[x, y]), end = '')
+            print()
+        
+        # # Confirming the contents of ValidPos
+        print('ValidPos')
+        for y in range(10):
+            for x in range(10):
+                print('{:^3}'.format(self.ValidPos[x, y]), end = '')
+            print()
+        
+        # # Confirming the contents of ValidDir
+        print('ValidDir')
+        for y in range(10):
+            for x in range(10):
+                print('{:^3}'.format(self.ValidDir[x, y]), end = '')
+            print()
+
     
-    """
-    Checking which direction disks can flip
-    """
+    ''' Creating widget '''
+    def createWidgets(self):
+
+        # Creating canvas
+        self.canvas = tkinter.Canvas(
+            self.master,
+            bg=BOARD_COLOR,
+            width=CANVAS_SIZE+1, # +1 is for drawing line
+            height=CANVAS_SIZE+1, # +1 is for drawing line
+            highlightthickness=0
+        )
+        self.canvas.pack(padx=10, pady=10)
+
+    ''' Setting events '''
+    def setEvents(self):
+
+        # Detecting mouse click on the canvas
+        self.canvas.bind('<ButtonPress>', self.click)
+
+    ''' Initializing game '''
+    def initReversi(self):
+        # Calculating the size of a square (px)
+        self.square_size = CANVAS_SIZE // BOARD_SIZE
+
+        # Drawing squares
+        for y in range(BOARD_SIZE):
+            for x in range(BOARD_SIZE):
+                # Calculating beginning and ending coordinates of the square
+                xs = x * self.square_size
+                ys = y * self.square_size
+                xe = (x + 1) * self.square_size
+                ye = (y + 1) * self.square_size
+                
+                # Drawing a square
+                tag_name = 'square_' + str(x) + '_' + str(y)
+                self.canvas.create_rectangle(
+                    xs, ys,
+                    xe, ye,
+                    tag=tag_name
+                )
+
+        # Calculating a position to draw dark disks
+        dark_init_pos_1_x = BOARD_SIZE // 2 - 1
+        dark_init_pos_1_y = BOARD_SIZE // 2
+        dark_init_pos_2_x = BOARD_SIZE // 2
+        dark_init_pos_2_y = BOARD_SIZE // 2 - 1
+
+        dark_init_pos = (
+            (dark_init_pos_1_x, dark_init_pos_1_y),
+            (dark_init_pos_2_x, dark_init_pos_2_y)
+        )
+
+        # Drawing disks
+        for x, y in dark_init_pos:
+            self.drawDisk(x, y, DARK)
+
+        # Calculating a position to draw light disks
+        light_init_pos_1_x = BOARD_SIZE // 2
+        light_init_pos_1_y = BOARD_SIZE // 2
+        light_init_pos_2_x = BOARD_SIZE // 2 - 1
+        light_init_pos_2_y = BOARD_SIZE // 2 - 1
+
+        light_init_pos = (
+            (light_init_pos_1_x, light_init_pos_1_y),
+            (light_init_pos_2_x, light_init_pos_2_y)
+        )
+
+        # Drawing disks
+        for x, y in light_init_pos:
+            self.drawDisk(x, y, LIGHT)
+
+        self.initValidation()
+
+    def drawDisk(self, x, y, store_color):
+        ''' Drawing a disk (circle) '''
+        color = self.color[store_color]
+
+        # Calculating a center position of (x,y) square
+        center_x = (x + 0.5) * self.square_size
+        center_y = (y + 0.5) * self.square_size
+
+        # Calculating start and end from the center
+        xs = center_x - (self.square_size * 0.8) // 2
+        ys = center_y - (self.square_size * 0.8) // 2
+        xe = center_x + (self.square_size * 0.8) // 2
+        ye = center_y + (self.square_size * 0.8) // 2
+        
+        # Drawing a circle
+        tag_name = 'disk_' + str(x) + '_' + str(y)
+        self.canvas.create_oval(
+            xs, ys,
+            xe, ye,
+            fill=color,
+            tag=tag_name
+        )
+        
+        # Storing the color to the board
+        self.RawBoard[x+1][y+1] = store_color
+
+    def click(self, event):
+        ''' Operation when the board is clicked '''
+
+        # if self.CurrentColor != DARK:
+            # Does nothing during COM's turn
+            # return
+
+        # Calculating the clicked position
+        x = event.x // self.square_size + 1
+        y = event.y // self.square_size + 1
+
+        # if self.checkPlacable(x, y):
+        # print(self.ValidPos[x,y])
+        if not self.place_disk(x, y):
+            print('Invalid address')
+        
+    """ Checking which direction disks can flip """
     def checkValidation(self, x, y, color):
  
         # Stores direction
@@ -189,12 +342,11 @@ class Board:
  
         return dir
     
-    """
-    Applying changes on the board by placing disks
-    """
+    """ Applying changes on the board by placing disks """
     def flipDisks(self, x, y):
         # Placing disk
         self.RawBoard[x, y] = self.CurrentColor
+        self.drawDisk(x-1, y-1, self.CurrentColor)
  
         # Flipping disks
         # Inputting dir in (y, x) in ValidDir
@@ -208,7 +360,8 @@ class Board:
             while self.RawBoard[x_tmp, y] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x_tmp, y] = self.CurrentColor
+                # self.RawBoard[x_tmp, y] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y-1, self.CurrentColor) #GUI version
  
                 # Next loop to the LEFT
                 x_tmp -= 1
@@ -222,7 +375,8 @@ class Board:
             while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                # self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y_tmp-1, self.CurrentColor) #GUI version
                 
                 # Next loop to the UPPER LEFT
                 x_tmp -= 1
@@ -236,7 +390,8 @@ class Board:
             while self.RawBoard[x, y_tmp] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x, y_tmp] = self.CurrentColor
+                # self.RawBoard[x, y_tmp] = self.CurrentColor
+                self.drawDisk(x-1, y_tmp-1, self.CurrentColor) #GUI version
  
                 # Next loop to the UPPER
                 y_tmp -= 1
@@ -250,7 +405,8 @@ class Board:
             while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                # self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y_tmp-1, self.CurrentColor) #GUI version
  
                 # Next loop to the UPPER RIGHT
                 x_tmp += 1
@@ -264,7 +420,8 @@ class Board:
             while self.RawBoard[x_tmp, y] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x_tmp, y] = self.CurrentColor
+                # self.RawBoard[x_tmp, y] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y-1, self.CurrentColor) #GUI version
                 
                 # Next loop to the RIGHT
                 x_tmp += 1
@@ -278,7 +435,8 @@ class Board:
             while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                # self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y_tmp-1, self.CurrentColor) #GUI version
  
                 # Next loop to the LOWER RIGHT
                 x_tmp += 1
@@ -293,7 +451,8 @@ class Board:
             while self.RawBoard[x, y_tmp] == - self.CurrentColor:
  
                 # Changing color
-                self.RawBoard[x, y_tmp] = self.CurrentColor
+                # self.RawBoard[x, y_tmp] = self.CurrentColor
+                self.drawDisk(x-1, y_tmp-1, self.CurrentColor) #GUI version
  
                 # Next loop to the LOWER
                 y_tmp += 1
@@ -307,15 +466,14 @@ class Board:
             while self.RawBoard[x_tmp, y_tmp] == - self.CurrentColor:
                 
                 # Changing color
-                self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                # self.RawBoard[x_tmp, y_tmp] = self.CurrentColor
+                self.drawDisk(x_tmp-1, y_tmp-1, self.CurrentColor) #GUI version
  
                 # Next loop to the LOWER LEFT
                 x_tmp -= 1
                 y_tmp += 1
 
-    """
-    Placing disk
-    """
+    """ Placing disk """
     def place_disk(self, x, y):
  
         # Validating square position
@@ -325,7 +483,6 @@ class Board:
             return False
         if self.ValidPos[x, y] == 0:
             return False
- 
         # Flipping disk
         self.flipDisks(x, y)
  
@@ -340,9 +497,7 @@ class Board:
  
         return True
 
-    """
-    Updating ValidPos and ValidDir
-    """
+    """ Updating ValidPos and ValidDir """
     def initValidation(self):
  
         # Initializing ValidPos (initialized to False for all)
@@ -362,9 +517,7 @@ class Board:
                 if dir != 0:
                     self.ValidPos[x, y] = True
 
-    """
-    Displaying board
-    """
+    """ Displaying board """
     def display(self):
  
         # columns
@@ -389,9 +542,7 @@ class Board:
             print()
         print()
         
-    """
-    Validating the input address
-    """
+    """ Validating the input address """
     def inputValidation(self, IN):
         # Length check
         if not len(IN) == 2:
@@ -404,9 +555,7 @@ class Board:
  
         return False
 
-    """
-    Game over check
-    """
+    """ Game over check """
     def isGameOver(self):
  
         # Game is over when reaches to 60 turns
@@ -429,9 +578,12 @@ class Board:
         return True
 
 
-'''
-Main code
-'''
+app = tkinter.Tk()
+app.title('Reversi')
+reversi = Board(app)
+app.mainloop()
+
+''' Main code '''
 # Creating board instance
 board = Board()
 
