@@ -1,7 +1,4 @@
-# reversi
-===============
-Reversi Program
-===============
+# Reversi Program
 This program is a Reversi game written in Python. It is created using the Tkinter module for the GUI.
 
 ## [How to Play]
