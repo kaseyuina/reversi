@@ -3,6 +3,7 @@ import numpy as np
 import tkinter as tk
 import tkinter.messagebox as mbox
 import sys
+import copy
  
 """ Variables """
 # Square status
@@ -33,9 +34,6 @@ IN_NUMBER = ['1', '2', '3', '4', '5', '6', '7', '8']
 # Maximum turns
 MAX_TURNS = 60
 
-# AI status
-AI_STAT = False
-
 # Color setting
 BOARD_COLOR = 'green'
 DARK_COLOR = 'black'
@@ -55,6 +53,9 @@ class Board:
             DARK : "DARK",
             LIGHT : "LIGHT"
         }
+
+        # AI status
+        self.AI_STAT = False
 
         # Set all the squares as empty
         self.RawBoard = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
@@ -125,37 +126,44 @@ class Board:
  
     ''' Evaluate disk state '''
     def EvaluateDiskStates(self, cpRawBoard, putDiskColor):
-            lightScore = 0
-            darkScore = 0
-            for y in range(10):
-                for x in range(10):
-                    score = self.valuePoints[x, y]
-                    if cpRawBoard[x, y] == LIGHT:
-                        lightScore += score
-                    elif cpRawBoard[x, y] == DARK:
-                        darkScore += score
-            if putDiskColor == LIGHT:
-                return lightScore - darkScore
-            return darkScore - lightScore
+        lightScore = 0
+        darkScore = 0
+        for y in range(10):
+            for x in range(10):
+                score = self.valuePoints[x, y]
+                if cpRawBoard[x, y] == LIGHT:
+                    lightScore += score
+                elif cpRawBoard[x, y] == DARK:
+                    darkScore += score
+        if putDiskColor == LIGHT:
+            return lightScore - darkScore
+        return darkScore - lightScore
 
-    def SearchNegaAlphaStone(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth):
-            # // 探索したストーン
-            resultStoneIndex = None
+    def SearchNegaAlphaDisk(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth):
+        # // 探索したストーン
+        resultStoneIndex = None
 
-            # // 置くことが可能なストーンを全て調べる
-            alpha = -sys.maxsize + 1 #// MinValueを反転するとintの範囲を超えてしまうため、+1する
-            beta = sys.maxsiz
-            canPutStonesIndex = GetAllCanPutStonesIndex(stoneStates, putStoneState)
-            for putStoneIndex in canPutStonesIndex:
-                # // 次の階層の状態を調べる
-                putStoneStates = GetPutStoneState(stoneStates, putStoneState, putStoneIndex.X, putStoneIndex.Z);
-                score = -1 * self.GetNegaAlphaScore(putStoneStates, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False);
+        # // 置くことが可能なストーンを全て調べる
+        alpha = -sys.maxsize + 1 #// MinValueを反転するとintの範囲を超えてしまうため、+1する
+        beta = sys.maxsize
+        # for y, putDiskCol in enumerate(cpValidPos):
+        for y in range(10):
+            # for x, putDiskRow in enumerate(putDiskCol):
+            for x in range(10):
+                if cpValidPos[x, y] == True:
+                    # // 次の階層の状態を調べる
+                    resultValue = self.place_disk(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y)
+                    cpRawBoard = resultValue[0]
+                    cpValidPos = resultValue[1]
+                    cpValidDir = resultValue[2]
+                    cpCurrentColor = resultValue[3]
+                    score = -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False)
 
-                # // 最大スコアの場合、スコアと該当インデックスを保持
-                if alpha < score:
-                    alpha = score
-                    resultStoneIndex = putStoneIndex
-            return resultStoneIndex
+                    # // 最大スコアの場合、スコアと該当インデックスを保持
+                    if alpha < score:
+                        alpha = score
+                        resultStoneIndex = [x, y]
+        return resultStoneIndex
 
     def GetNegaAlphaScore(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth, alpha, beta, isPrevPassed = False):
         # // 葉ノードで評価関数を実行
@@ -167,20 +175,21 @@ class Board:
         for y in range(10):
             # for x, putDiskRow in enumerate(putDiskCol):
             for x in range(10):
-                # // 次の階層の状態を調べる
-                resultValue = self.place_disk(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y)
-                cpRawBoard = resultValue[0]
-                cpValidPos = resultValue[1]
-                cpValidDir = resultValue[2]
-                cpCurrentColor = resultValue[3]
-                score = -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False)
-                # // NegaMax値が探索範囲の上限より上の場合は枝狩り
-                if score >= beta:
-                    return score
+                if cpValidPos[x, y] == True:
+                    # // 次の階層の状態を調べる
+                    resultValue = self.place_disk(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y)
+                    cpRawBoard = resultValue[0]
+                    cpValidPos = resultValue[1]
+                    cpValidDir = resultValue[2]
+                    cpCurrentColor = resultValue[3]
+                    score = -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False)
+                    # // NegaMax値が探索範囲の上限より上の場合は枝狩り
+                    if score >= beta:
+                        return score
 
-                # // alpha値、maxScoreを更新
-                alpha = max(alpha, score)
-                maxScore = max(maxScore, score)
+                    # // alpha値、maxScoreを更新
+                    alpha = max(alpha, score)
+                    maxScore = max(maxScore, score)
 
             # // 見つからなかった場合
             if maxScore == -sys.maxsize:
@@ -296,28 +305,29 @@ class Board:
         self.CurrentColor = returnVal[3]
 
     def drawDisk(self, x, y, store_color):
-        ''' Drawing a disk (circle) '''
-        color = self.color[store_color]
+        if self.AI_STAT == False:
+            ''' Drawing a disk (circle) '''
+            color = self.color[store_color]
 
-        # Draws disk only when AI status is False
-        # Calculating a center position of (x,y) square
-        center_x = (x + 0.5) * self.square_size
-        center_y = (y + 0.5) * self.square_size
+            # Draws disk only when AI status is False
+            # Calculating a center position of (x,y) square
+            center_x = (x + 0.5) * self.square_size
+            center_y = (y + 0.5) * self.square_size
 
-        # Calculating start and end from the center
-        xs = center_x - (self.square_size * 0.8) // 2
-        ys = center_y - (self.square_size * 0.8) // 2
-        xe = center_x + (self.square_size * 0.8) // 2
-        ye = center_y + (self.square_size * 0.8) // 2
-        
-        # Drawing a circle
-        tag_name = 'disk_' + str(x) + '_' + str(y)
-        self.canvas.create_oval(
-            xs, ys,
-            xe, ye,
-            fill=color,
-            tag=tag_name
-        )
+            # Calculating start and end from the center
+            xs = center_x - (self.square_size * 0.8) // 2
+            ys = center_y - (self.square_size * 0.8) // 2
+            xe = center_x + (self.square_size * 0.8) // 2
+            ye = center_y + (self.square_size * 0.8) // 2
+            
+            # Drawing a circle
+            tag_name = 'disk_' + str(x) + '_' + str(y)
+            self.canvas.create_oval(
+                xs, ys,
+                xe, ye,
+                fill=color,
+                tag=tag_name
+            )
         return store_color
 
     def showPopup(self, input):
@@ -353,16 +363,16 @@ class Board:
     def click(self, event):
         ''' Operation when the board is clicked '''
         # if self.CurrentColor != DARK:
-            # Does nothing during COM's turn
-            # return
-        AI_STAT = False
+        #     # Does nothing during COM's turn
+        #     return
+        self.AI_STAT = False
 
         # Calculating the clicked position
         x = event.x // self.square_size + 1
         y = event.y // self.square_size + 1
 
         # Placing a disk
-        returnValue = self.place_disk(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor, x, y)
+        returnValue = self.place_disk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), x, y)
         self.RawBoard = returnValue[0]
         self.ValidPos = returnValue[1]
         self.ValidDir = returnValue[2]
@@ -438,12 +448,16 @@ class Board:
             self.ValidPos = returnVal[1]
             self.ValidDir = returnVal[2]
             self.CurrentColor = returnVal[3]
-            self.showPopup(self.strColor[self.CurrentColor] + "'s turn passed")
+            self.showPopup(self.strColor[-self.CurrentColor] + "'s turn passed")
         
         # print(self.strColor[self.CurrentColor] + str(self.EvaluateDiskStates()))
-        cpRawBoard = self.RawBoard
-        cpValidPos = self.ValidPos
-        self.GetNegaMaxScore(cpRawBoard, cpValidPos, self.CurrentColor, 3, False)
+        # cpRawBoard = self.RawBoard
+        # cpValidPos = self.ValidPos
+        # self.GetNegaMaxScore(cpRawBoard, cpValidPos, self.CurrentColor, 3, False)
+        if self.CurrentColor == LIGHT:
+            self.AI_STAT = True
+            # self.master.after(1000, self.com())
+            # self.com()
 
     """ Checking which direction disks can flip """
     def checkValidation(self, cpRawBoard, x, y, color):
@@ -719,8 +733,17 @@ class Board:
 
         message = "This is " + self.strColor[cpCurrentColor] + "'s turn"
         self.message_label.config(text=message)
+
+        # if self.CurrentColor == LIGHT:
+        #     AI_STAT = True
+        #     self.master.after(1000, self.com())
  
         return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, True
+
+    def com(self):
+        putDiskIndex = self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), 3)
+        self.AI_STAT = False
+        self.place_disk(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor, putDiskIndex[0], putDiskIndex[1])
 
     """ Updating ValidPos and ValidDir """
     def initValidation(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor):
