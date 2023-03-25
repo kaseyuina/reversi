@@ -4,6 +4,7 @@ import tkinter as tk
 import tkinter.messagebox as mbox
 import sys
 import copy
+import time
  
 """ Variables """
 # Square status
@@ -125,79 +126,90 @@ class Board:
             [0,  0,  0,  0,  0,  0,  0,  0,  0,  0]])
  
     ''' Evaluate disk state '''
-    def EvaluateDiskStates(self, cpRawBoard, putDiskColor):
+    def EvaluateDiskStates(self, edRawBoard, putDiskColor):
         lightScore = 0
         darkScore = 0
         for y in range(10):
             for x in range(10):
                 score = self.valuePoints[x, y]
-                if cpRawBoard[x, y] == LIGHT:
+                if edRawBoard[x, y] == LIGHT:
                     lightScore += score
-                elif cpRawBoard[x, y] == DARK:
+                elif edRawBoard[x, y] == DARK:
                     darkScore += score
         if putDiskColor == LIGHT:
             return lightScore - darkScore
         return darkScore - lightScore
 
-    def SearchNegaAlphaDisk(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth):
-        # // 探索したストーン
+    def SearchNegaAlphaDisk(self, snaRawBoard, snaValidPos, snaValidDir, snaCurrentColor, depth):
         resultStoneIndex = None
 
-        # // 置くことが可能なストーンを全て調べる
-        alpha = -sys.maxsize + 1 #// MinValueを反転するとintの範囲を超えてしまうため、+1する
+        # Confirms all the squares where a disk can be placed
+        alpha = -sys.maxsize + 1
         beta = sys.maxsize
-        # for y, putDiskCol in enumerate(cpValidPos):
         for y in range(10):
-            # for x, putDiskRow in enumerate(putDiskCol):
             for x in range(10):
-                if cpValidPos[x, y] == True:
-                    # // 次の階層の状態を調べる
-                    resultValue = self.place_disk(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y)
-                    cpRawBoard = resultValue[0]
-                    cpValidPos = resultValue[1]
-                    cpValidDir = resultValue[2]
-                    cpCurrentColor = resultValue[3]
-                    score = -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False)
+                if snaValidPos[x, y] == True:
+                    # Confirms the next level status
+                    cpRawBoard = copy.copy(snaRawBoard)
+                    cpValidPos = copy.copy(snaValidPos)
+                    cpValidDir = copy.copy(snaValidDir)
+                    cpCurentColor = copy.copy(snaCurrentColor)
+                    resultValue = self.place_disk(copy.copy(snaRawBoard), copy.copy(snaValidPos), copy.copy(snaValidDir), copy.copy(snaCurrentColor), x, y)
+                    snaRawBoard = resultValue[0]
+                    snaValidPos = resultValue[1]
+                    snaValidDir = resultValue[2]
+                    snaCurrentColor = resultValue[3]
+                    score = -1 * self.GetNegaAlphaScore(copy.copy(snaRawBoard), copy.copy(snaValidPos), copy.copy(snaValidDir), copy.copy(-snaCurrentColor), depth - 1, -beta, -alpha, False)
+                    snaRawBoard = cpRawBoard
+                    snaValidPos = cpValidPos
+                    snaValidDir = cpValidDir
+                    snaCurrentColor = cpCurentColor
 
-                    # // 最大スコアの場合、スコアと該当インデックスを保持
+                    # Stores score and the index in case of max score
                     if alpha < score:
                         alpha = score
                         resultStoneIndex = [x, y]
         return resultStoneIndex
 
-    def GetNegaAlphaScore(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth, alpha, beta, isPrevPassed = False):
-        # // 葉ノードで評価関数を実行
+    def GetNegaAlphaScore(self, gnaRawBoard, gnaValidPos, gnaValidDir, gnaCurrentColor, depth, alpha, beta, isPrevPassed = False):
+        # Runs valuation function in a leaf node
         if depth == 0:
-            return self.EvaluateDiskStates(cpRawBoard, cpCurrentColor)
-        # // 置くことが可能なストーンを全て調べる
+            return self.EvaluateDiskStates(copy.copy(gnaRawBoard), copy.copy(gnaCurrentColor))
+        # Confirms all the squares where a disk can be placed
         maxScore = -sys.maxsize
-        # for y, putDiskCol in enumerate(cpValidPos):
         for y in range(10):
-            # for x, putDiskRow in enumerate(putDiskCol):
             for x in range(10):
-                if cpValidPos[x, y] == True:
-                    # // 次の階層の状態を調べる
-                    resultValue = self.place_disk(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y)
-                    cpRawBoard = resultValue[0]
-                    cpValidPos = resultValue[1]
-                    cpValidDir = resultValue[2]
-                    cpCurrentColor = resultValue[3]
-                    score = -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, -cpCurrentColor, depth - 1, -beta, -alpha, False)
-                    # // NegaMax値が探索範囲の上限より上の場合は枝狩り
+                if gnaValidPos[x, y] == True:
+                    # Searching next level statsu
+                    cpRawBoard = copy.copy(gnaRawBoard)
+                    cpValidPos = copy.copy(gnaValidPos)
+                    cpValidDir = copy.copy(gnaValidDir)
+                    cpCurentColor = copy.copy(gnaCurrentColor)
+                    resultValue = self.place_disk(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(gnaCurrentColor), x, y)
+                    gnaRawBoard = resultValue[0]
+                    gnaValidPos = resultValue[1]
+                    gnaValidDir = resultValue[2]
+                    gnaCurrentColor = resultValue[3]
+                    score = -1 * self.GetNegaAlphaScore(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(-gnaCurrentColor), depth - 1, -beta, -alpha, False)
+                    # Ends searching when NegaMax value is more than upper limit of search range
+                    gnaRawBoard = cpRawBoard
+                    gnaValidPos = cpValidPos
+                    gnaValidDir = cpValidDir
+                    gnaCurrentColor = cpCurentColor
                     if score >= beta:
                         return score
 
-                    # // alpha値、maxScoreを更新
+                    # Updating alpha and maxScore
                     alpha = max(alpha, score)
                     maxScore = max(maxScore, score)
 
-            # // 見つからなかった場合
-            if maxScore == -sys.maxsize:
-                # // ２回連続パスの場合、評価関数を実行
-                if isPrevPassed:
-                    return self.EvaluateDiskStates(cpRawBoard, cpCurrentColor);
-                # // ストーン状態はそのままで、次の階層の状態を調べる
-                return -1 * self.GetNegaAlphaScore(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, depth - 1, -beta, -alpha, True);
+        # In case not found
+        if maxScore == -sys.maxsize:
+            # In case 2 passes on a roll, valuation function is run
+            if isPrevPassed:
+                return self.EvaluateDiskStates(copy.copy(gnaRawBoard), copy.copy(gnaCurrentColor))
+            # Search next level with the same disk status
+            return -1 * self.GetNegaAlphaScore(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(gnaCurrentColor), depth - 1, -beta, -alpha, True);
         return maxScore
 
     def testBoard(self):
@@ -220,7 +232,6 @@ class Board:
             for x in range(10):
                 print('{:^3}'.format(self.ValidDir[x, y]), end = '')
             print()
-
     
     ''' Creating widget '''
     def createWidgets(self):
@@ -359,30 +370,9 @@ class Board:
         # Closing the popup in 1 second
         popup.after(1500, popup.destroy)
             
-        
-    def click(self, event):
-        ''' Operation when the board is clicked '''
-        # if self.CurrentColor != DARK:
-        #     # Does nothing during COM's turn
-        #     return
-        self.AI_STAT = False
-
-        # Calculating the clicked position
-        x = event.x // self.square_size + 1
-        y = event.y // self.square_size + 1
-
-        # Placing a disk
-        returnValue = self.place_disk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), x, y)
-        self.RawBoard = returnValue[0]
-        self.ValidPos = returnValue[1]
-        self.ValidDir = returnValue[2]
-        self.CurrentColor = returnValue[3]
-        if not returnValue[4]:
-        # if not self.place_disk(x, y):
-            self.showPopup('Invalid square')
-
+    def resultCheck(self):
         # Game over check
-        elif self.isGameOver():
+        if self.isGameOver():
             # # Displaying the result
                 
             ## Number of each color
@@ -437,12 +427,11 @@ class Board:
             button = tk.Button(popup, text="Close", command=button_click)
             button.pack()
 
-        # Pass
+        # Pass check
         elif not self.ValidPos[:, :].any():
             self.CurrentColor = - self.CurrentColor
             message = "This is " + self.strColor[self.CurrentColor] + "'s turn"
             self.message_label.config(text=message)
-            # self.initValidation()
             returnVal = self.initValidation(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor)
             self.RawBoard = returnVal[0]
             self.ValidPos = returnVal[1]
@@ -450,153 +439,172 @@ class Board:
             self.CurrentColor = returnVal[3]
             self.showPopup(self.strColor[-self.CurrentColor] + "'s turn passed")
         
-        # print(self.strColor[self.CurrentColor] + str(self.EvaluateDiskStates()))
-        # cpRawBoard = self.RawBoard
-        # cpValidPos = self.ValidPos
-        # self.GetNegaMaxScore(cpRawBoard, cpValidPos, self.CurrentColor, 3, False)
+    def click(self, event):
+        ''' Operation when the board is clicked '''
+        self.AI_STAT = False
+
+        # Calculating the clicked position
+        x = event.x // self.square_size + 1
+        y = event.y // self.square_size + 1
+
+        # Placing a disk
+        returnValue = self.place_disk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), x, y)
+        self.RawBoard = returnValue[0]
+        self.ValidPos = returnValue[1]
+        self.ValidDir = returnValue[2]
+        self.CurrentColor = returnValue[3]
+        if not returnValue[4]:
+        # if not self.place_disk(x, y):
+            self.showPopup('Invalid square')
+
+        else:
+            # Game over / pass check
+            self.resultCheck()
+
+        # AI's turn
         if self.CurrentColor == LIGHT:
             self.AI_STAT = True
-            # self.master.after(1000, self.com())
-            # self.com()
+            self.com()
+            self.resultCheck()
 
     """ Checking which direction disks can flip """
-    def checkValidation(self, cpRawBoard, x, y, color):
+    def checkValidation(self, cvRawBoard, x, y, color):
         # Stores direction
         dir = 0
  
         # Invalid when disk already exists
-        if(cpRawBoard[x, y] != EMPTY):
+        if(cvRawBoard[x, y] != EMPTY):
         # if(self.RawBoard[x, y] != EMPTY):
             return dir
  
         ## Left
-        if(cpRawBoard[x - 1, y] == - color): #Checking if the other color exists
+        if(cvRawBoard[x - 1, y] == - color): #Checking if the other color exists
             x_tmp = x - 2
             y_tmp = y
  
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp -= 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | LEFT
  
         ## Upper left
-        if(cpRawBoard[x - 1, y - 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x - 1, y - 1] == - color): #Checking if the other color exists
             x_tmp = x - 2
             y_tmp = y - 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp -= 1
                 y_tmp -= 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | UPPER_LEFT
  
         ## Upper
-        if(cpRawBoard[x, y - 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x, y - 1] == - color): #Checking if the other color exists
             x_tmp = x
             y_tmp = y - 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 y_tmp -= 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | UPPER
  
         ## Upper right
-        if(cpRawBoard[x + 1, y - 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x + 1, y - 1] == - color): #Checking if the other color exists
             x_tmp = x + 2
             y_tmp = y - 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp += 1
                 y_tmp -= 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | UPPER_RIGHT
  
         ## Right
-        if(cpRawBoard[x + 1, y] == - color): #Checking if the other color exists
+        if(cvRawBoard[x + 1, y] == - color): #Checking if the other color exists
             x_tmp = x + 2
             y_tmp = y
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp += 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | RIGHT
  
         ## Lower right
-        if(cpRawBoard[x + 1, y + 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x + 1, y + 1] == - color): #Checking if the other color exists
             x_tmp = x + 2
             y_tmp = y + 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp += 1
                 y_tmp += 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | LOWER_RIGHT
  
         ## Lower
-        if(cpRawBoard[x, y + 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x, y + 1] == - color): #Checking if the other color exists
             x_tmp = x
             y_tmp = y + 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 y_tmp += 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | LOWER
  
         ## Lower left
-        if(cpRawBoard[x - 1, y + 1] == - color): #Checking if the other color exists
+        if(cvRawBoard[x - 1, y + 1] == - color): #Checking if the other color exists
             x_tmp = x - 2
             y_tmp = y + 2
             
             # Loops while the other color continues
-            while cpRawBoard[x_tmp, y_tmp] == - color:
+            while cvRawBoard[x_tmp, y_tmp] == - color:
                 x_tmp -= 1
                 y_tmp += 1
             
             # Update dir if self color sandwitches the other color
-            if cpRawBoard[x_tmp, y_tmp] == color:
+            if cvRawBoard[x_tmp, y_tmp] == color:
                 dir = dir | LOWER_LEFT
  
         return dir
     
     """ Applying changes on the board by placing disks """
-    def flipDisks(self, cpRawBoard, cpValidDir, cpCurrentColor, x, y):
+    def flipDisks(self, fdRawBoard, fdValidDir, fdCurrentColor, x, y):
         # Placing disk
-        cpRawBoard[x, y] = self.drawDisk(x-1, y-1, cpCurrentColor)
+        fdRawBoard[x, y] = self.drawDisk(x-1, y-1, fdCurrentColor)
  
         # Flipping disks
         # Inputting dir in (y, x) in ValidDir
-        dir = cpValidDir[x, y]
+        dir = fdValidDir[x, y]
  
         ## LEFT
         if dir & LEFT: 
             x_tmp = x - 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x_tmp][y] = self.drawDisk(x_tmp-1, y-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y] = self.drawDisk(x_tmp-1, y-1, fdCurrentColor) #GUI version
  
                 # Next loop to the LEFT
                 x_tmp -= 1
@@ -607,10 +615,10 @@ class Board:
             y_tmp = y - 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y_tmp] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, fdCurrentColor) #GUI version
                 
                 # Next loop to the UPPER LEFT
                 x_tmp -= 1
@@ -621,10 +629,10 @@ class Board:
             y_tmp = y - 1
  
             # Loops until hitting other color
-            while cpRawBoard[x, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x, y_tmp] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x][y_tmp] = self.drawDisk(x-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x][y_tmp] = self.drawDisk(x-1, y_tmp-1, fdCurrentColor) #GUI version
  
                 # Next loop to the UPPER
                 y_tmp -= 1
@@ -635,10 +643,10 @@ class Board:
             y_tmp = y - 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y_tmp] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, fdCurrentColor) #GUI version
  
                 # Next loop to the UPPER RIGHT
                 x_tmp += 1
@@ -649,10 +657,10 @@ class Board:
             x_tmp = x + 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x_tmp][y] = self.drawDisk(x_tmp-1, y-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y] = self.drawDisk(x_tmp-1, y-1, fdCurrentColor) #GUI version
                 
                 # Next loop to the RIGHT
                 x_tmp += 1
@@ -663,10 +671,10 @@ class Board:
             y_tmp = y + 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y_tmp] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, fdCurrentColor) #GUI version
  
                 # Next loop to the LOWER RIGHT
                 x_tmp += 1
@@ -677,10 +685,10 @@ class Board:
             y_tmp = y + 1
  
             # Loops until hitting other color
-            while cpRawBoard[x, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x, y_tmp] == - fdCurrentColor:
  
                 # Changing color
-                cpRawBoard[x][y_tmp] = self.drawDisk(x-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x][y_tmp] = self.drawDisk(x-1, y_tmp-1, fdCurrentColor) #GUI version
  
                 # Next loop to the LOWER
                 y_tmp += 1
@@ -691,80 +699,87 @@ class Board:
             y_tmp = y + 1
  
             # Loops until hitting other color
-            while cpRawBoard[x_tmp, y_tmp] == - cpCurrentColor:
+            while fdRawBoard[x_tmp, y_tmp] == - fdCurrentColor:
                 
                 # Changing color
-                cpRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, cpCurrentColor) #GUI version
+                fdRawBoard[x_tmp][y_tmp] = self.drawDisk(x_tmp-1, y_tmp-1, fdCurrentColor) #GUI version
  
                 # Next loop to the LOWER LEFT
                 x_tmp -= 1
                 y_tmp += 1
 
-        return cpRawBoard, cpValidDir, cpCurrentColor
+        return fdRawBoard, fdValidDir, fdCurrentColor
 
     """ Placing disk """
-    def place_disk(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, x, y):
+    def place_disk(self, pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, x, y):
  
         # Validating square position
         if x < 1 or BOARD_SIZE < x:
-            return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, False
+            return pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, False
         if y < 1 or BOARD_SIZE < y:
-            return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, False
-        if cpValidPos[x, y] == 0:
-            return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, False
+            return pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, False
+        if pdValidPos[x, y] == 0:
+            return pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, False
         # Flipping disk
-        returnValue = self.flipDisks(cpRawBoard, cpValidDir, cpCurrentColor, x, y)
-        cpRawBoard = returnValue[0]
-        cpValidDir = returnValue[1]
-        cpCurrentColor = returnValue[2]
+        returnValue = self.flipDisks(pdRawBoard, pdValidDir, pdCurrentColor, x, y)
+        pdRawBoard = returnValue[0]
+        pdValidDir = returnValue[1]
+        # pdCurrentColor = returnValue[2]
  
         # Next turn
-        self.Turns += 1
+        if self.AI_STAT == False:
+            self.Turns += 1
  
         # Switching color
-        cpCurrentColor = - cpCurrentColor
+        pdCurrentColor = - pdCurrentColor
         
         # Updating ValidPos and ValidDir
-        returnVal = self.initValidation(cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor)
-        cpRawBoard = returnVal[0]
-        cpValidPos = returnVal[1]
-        cpValidDir = returnVal[2]
-        cpCurrentColor = returnVal[3]
+        returnVal = self.initValidation(pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor)
+        pdRawBoard = returnVal[0]
+        pdValidPos = returnVal[1]
+        pdValidDir = returnVal[2]
+        pdCurrentColor = returnVal[3]
 
-        message = "This is " + self.strColor[cpCurrentColor] + "'s turn"
+        message = "This is " + self.strColor[pdCurrentColor] + "'s turn"
         self.message_label.config(text=message)
 
         # if self.CurrentColor == LIGHT:
         #     AI_STAT = True
         #     self.master.after(1000, self.com())
  
-        return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor, True
+        return pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, True
 
     def com(self):
-        putDiskIndex = self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), 3)
+        putDiskIndex = self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), 6)
         self.AI_STAT = False
-        self.place_disk(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor, putDiskIndex[0], putDiskIndex[1])
+        # self.testBoard()
+        resultValue = self.place_disk(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor, putDiskIndex[0], putDiskIndex[1])
+        self.RawBoard = resultValue[0]
+        self.ValidPos = resultValue[1]
+        self.ValidDir = resultValue[2]
+        self.CurrentColor = resultValue[3]
+        # self.testBoard()
 
     """ Updating ValidPos and ValidDir """
-    def initValidation(self, cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor):
+    def initValidation(self, ivRawBoard, ivValidPos, ivValidDir, ivCurrentColor):
  
         # Initializing ValidPos (initialized to False for all)
-        cpValidPos[:, :] = False
+        ivValidPos[:, :] = False
  
         # Loops in all squares besides WALL
         for x in range(1, BOARD_SIZE + 1):
             for y in range(1, BOARD_SIZE + 1):
  
                 # Running checkValidation function
-                dir = self.checkValidation(cpRawBoard, x, y, cpCurrentColor)
+                dir = self.checkValidation(ivRawBoard, x, y, ivCurrentColor)
  
                 # Inputting dir to ValidDir in each square
-                cpValidDir[x, y] = dir
+                ivValidDir[x, y] = dir
  
                 # Input True into ValidPos if dir is not 0
                 if dir != 0:
-                    cpValidPos[x, y] = True
-        return cpRawBoard, cpValidPos, cpValidDir, cpCurrentColor
+                    ivValidPos[x, y] = True
+        return ivRawBoard, ivValidPos, ivValidDir, ivCurrentColor
 
     """ Displaying board """
     def display(self):
