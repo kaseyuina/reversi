@@ -16,6 +16,7 @@ WALL = 2
 # Size of the board
 BOARD_SIZE = 8
 CANVAS_SIZE = 400
+DEPTH = 7
 
 # Direction(binary)
 NONE = 0
@@ -113,18 +114,30 @@ class Board:
     
         # Set values to all the squares
         # Values are used for AI to calculate where to put disks
-        self.valuePoints = np.array([
-            [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-            [0, 30,-12,  0, -1, -1,  0,-12, 30,  0],
-            [0,-12,-15, -3, -3, -3, -3,-15,-12,  0],
-            [0,  0, -3,  0, -1, -1,  0, -3,  0,  0],
-            [0, -1, -3, -1, -1, -1, -1, -3, -1,  0],
-            [0, -1, -3, -1, -1, -1, -1, -3, -1,  0],
-            [0,  0, -3,  0, -1, -1,  0, -3,  0,  0],
-            [0,-12,-15, -3, -3, -3, -3,-15,-12,  0],
-            [0, 30,-12,  0, -1, -1,  0,-12, 30,  0],
-            [0,  0,  0,  0,  0,  0,  0,  0,  0,  0]])
+        # self.valuePoints = np.array([
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0, 30,-12,  0, -1, -1,  0,-12, 30,  0],
+        #     [0,-12,-15, -3, -3, -3, -3,-15,-12,  0],
+        #     [0,  0, -3,  0, -1, -1,  0, -3,  0,  0],
+        #     [0, -1, -3, -1, -1, -1, -1, -3, -1,  0],
+        #     [0, -1, -3, -1, -1, -1, -1, -3, -1,  0],
+        #     [0,  0, -3,  0, -1, -1,  0, -3,  0,  0],
+        #     [0,-12,-15, -3, -3, -3, -3,-15,-12,  0],
+        #     [0, 30,-12,  0, -1, -1,  0,-12, 30,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0]])
  
+        self.valuePoints = np.array([
+            [0,   0,   0,   0,   0,   0,   0,   0,   0,  0],
+            [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
+            [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
+            [0,  20,  -5,  15,   3,   3,  15,  -5,  20,  0],
+            [0,   5,  -5,   3,   3,   3,   3,  -5,   5,  0],
+            [0,   5,  -5,   3,   3,   3,   3,  -5,   5,  0],
+            [0,  20,  -5,  15,   3,   3,  15,  -5,  20,  0],
+            [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
+            [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
+            [0,   0,   0,   0,   0,   0,   0,   0,   0,  0]])
+
     ''' Evaluate disk state '''
     def EvaluateDiskStates(self, edRawBoard, putDiskColor):
         lightScore = 0
@@ -140,26 +153,75 @@ class Board:
             return lightScore - darkScore
         return darkScore - lightScore
 
-    def SearchNegaAlphaDisk(self, snaRawBoard, snaValidPos, snaValidDir, snaCurrentColor, depth):
-        resultStoneIndex = None
-
-        # Confirms all the squares where a disk can be placed
-        alpha = -sys.maxsize + 1
-        beta = sys.maxsize
+    ''' Improved EvaluateDiskStates '''
+    def EvaluateDiskStates2(self, edRawBoard, edValidPos, putDiskColor):
+        lightScore = 0
+        darkScore = 0
+        
+        # Count mobility and disk difference
+        lightMobility = 0
+        darkMobility = 0
+        lightDisks = 0
+        darkDisks = 0
+        
         for y in range(10):
             for x in range(10):
+                if edRawBoard[x, y] == LIGHT:
+                    lightDisks += 1
+                elif edRawBoard[x, y] == DARK:
+                    darkDisks += 1
+                else:
+                    # Check mobility for empty squares
+                    if edValidPos[x, y] == True:
+                        if putDiskColor == LIGHT:
+                            lightMobility += 1
+                        else:
+                            darkMobility += 1
+        
+                # Add value points
+                score = self.valuePoints[x, y]
+                if edRawBoard[x, y] == LIGHT:
+                    lightScore += score
+                elif edRawBoard[x, y] == DARK:
+                    darkScore += score
+        
+        # Calculate disk difference and mobility difference
+        disksDiff = lightDisks - darkDisks
+        mobilityDiff = lightMobility - darkMobility
+        
+        # Calculate final score
+        if putDiskColor == LIGHT:
+            finalScore = lightScore - darkScore + disksDiff + mobilityDiff
+        else:
+            finalScore = darkScore - lightScore + disksDiff + mobilityDiff
+            
+        return finalScore
+
+
+    ''' This function searches the board by using NegaAlpha algorithm '''
+    def SearchNegaAlphaDisk(self, snaRawBoard, snaValidPos, snaValidDir, snaCurrentColor, depth):
+        resultDiskIndex = None
+
+        # Confirms all the squares where a disk can be placed
+        # setting alpha (as the minimum value) and beta (as the maximum value)
+        alpha = -float('inf')
+        beta = float('inf')
+        # Loop all the squares in the board
+        for y in range(10):
+            for x in range(10):
+                # When a disk can be placed in snaValidPos[x, y]
                 if snaValidPos[x, y] == True:
+                    # Create a copy of each board
+                    cpRawBoard = copy.copy(snaRawBoard) # Board which holds DARK, LIGHT, Empty
+                    cpValidPos = copy.copy(snaValidPos) # Board which holds where disks can be placed at
+                    cpValidDir = copy.copy(snaValidDir) # Board which holds which directions disks can be flipped
+                    cpCurentColor = copy.copy(snaCurrentColor) # A variable which holds the current turn's color
+                    # Place a disk and flips disks
+                    resultValue = self.place_disk(snaRawBoard, snaValidPos, snaValidDir, snaCurrentColor, x, y)
                     # Confirms the next level status
-                    cpRawBoard = copy.copy(snaRawBoard)
-                    cpValidPos = copy.copy(snaValidPos)
-                    cpValidDir = copy.copy(snaValidDir)
-                    cpCurentColor = copy.copy(snaCurrentColor)
-                    resultValue = self.place_disk(copy.copy(snaRawBoard), copy.copy(snaValidPos), copy.copy(snaValidDir), copy.copy(snaCurrentColor), x, y)
-                    snaRawBoard = resultValue[0]
-                    snaValidPos = resultValue[1]
-                    snaValidDir = resultValue[2]
-                    snaCurrentColor = resultValue[3]
-                    score = -1 * self.GetNegaAlphaScore(copy.copy(snaRawBoard), copy.copy(snaValidPos), copy.copy(snaValidDir), copy.copy(-snaCurrentColor), depth - 1, -beta, -alpha, False)
+                    score = -1 * self.GetNegaAlphaScore(resultValue[0], resultValue[1], resultValue[2], -resultValue[3], depth - 1, -alpha, -beta, False)
+
+                    # Setting the status of each board to the original state
                     snaRawBoard = cpRawBoard
                     snaValidPos = cpValidPos
                     snaValidDir = cpValidDir
@@ -168,34 +230,38 @@ class Board:
                     # Stores score and the index in case of max score
                     if alpha < score:
                         alpha = score
-                        resultStoneIndex = [x, y]
-        return resultStoneIndex
+                        resultDiskIndex = [x, y]
+        return resultDiskIndex
 
+    ''' This function get the score in the board recursively by using NegaAlpha algorithm '''
     def GetNegaAlphaScore(self, gnaRawBoard, gnaValidPos, gnaValidDir, gnaCurrentColor, depth, alpha, beta, isPrevPassed = False):
         # Runs valuation function in a leaf node
         if depth == 0:
-            return self.EvaluateDiskStates(copy.copy(gnaRawBoard), copy.copy(gnaCurrentColor))
+            # return self.EvaluateDiskStates(gnaRawBoard, gnaCurrentColor)
+            return self.EvaluateDiskStates2(gnaRawBoard, gnaValidPos, gnaCurrentColor)
         # Confirms all the squares where a disk can be placed
-        maxScore = -sys.maxsize
+        # setting max score initial value as negative infinity
+        maxScore = -float('inf')
+        # Loop all the squares in the board
         for y in range(10):
             for x in range(10):
                 if gnaValidPos[x, y] == True:
+                    # Create a copy of each board
+                    cpRawBoard = copy.copy(gnaRawBoard) # Board which holds DARK, LIGHT, Empty
+                    cpValidPos = copy.copy(gnaValidPos) # Board which holds where disks can be placed at
+                    cpValidDir = copy.copy(gnaValidDir) # Board which holds which directions disks can be flipped
+                    cpCurentColor = copy.copy(gnaCurrentColor) # A variable which holds the current turn's color
+                    # Place a disk and flips disks
+                    resultValue = self.place_disk(gnaRawBoard, gnaValidPos, gnaValidDir, gnaCurrentColor, x, y)
                     # Searching next level statsu
-                    cpRawBoard = copy.copy(gnaRawBoard)
-                    cpValidPos = copy.copy(gnaValidPos)
-                    cpValidDir = copy.copy(gnaValidDir)
-                    cpCurentColor = copy.copy(gnaCurrentColor)
-                    resultValue = self.place_disk(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(gnaCurrentColor), x, y)
-                    gnaRawBoard = resultValue[0]
-                    gnaValidPos = resultValue[1]
-                    gnaValidDir = resultValue[2]
-                    gnaCurrentColor = resultValue[3]
-                    score = -1 * self.GetNegaAlphaScore(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(-gnaCurrentColor), depth - 1, -beta, -alpha, False)
-                    # Ends searching when NegaMax value is more than upper limit of search range
+                    score = -1 * self.GetNegaAlphaScore(resultValue[0], resultValue[1], resultValue[2], -resultValue[3], depth - 1, -alpha, -beta, False)
+
+                    # Setting the status of each board to the original state
                     gnaRawBoard = cpRawBoard
                     gnaValidPos = cpValidPos
                     gnaValidDir = cpValidDir
                     gnaCurrentColor = cpCurentColor
+                    # Ends searching when NegaMax value is more than upper limit of search range
                     if score >= beta:
                         return score
 
@@ -207,9 +273,9 @@ class Board:
         if maxScore == -sys.maxsize:
             # In case 2 passes on a roll, valuation function is run
             if isPrevPassed:
-                return self.EvaluateDiskStates(copy.copy(gnaRawBoard), copy.copy(gnaCurrentColor))
+                return self.EvaluateDiskStates(gnaRawBoard, gnaCurrentColor)
             # Search next level with the same disk status
-            return -1 * self.GetNegaAlphaScore(copy.copy(gnaRawBoard), copy.copy(gnaValidPos), copy.copy(gnaValidDir), copy.copy(gnaCurrentColor), depth - 1, -beta, -alpha, True);
+            return -1 * self.GetNegaAlphaScore(gnaRawBoard, gnaValidPos, gnaValidDir, gnaCurrentColor, depth - 1, -alpha, -beta, True)
         return maxScore
 
     def testBoard(self):
@@ -339,6 +405,7 @@ class Board:
                 fill=color,
                 tag=tag_name
             )
+        # time.sleep(0.1)
         return store_color
 
     def showPopup(self, input):
@@ -591,6 +658,7 @@ class Board:
     def flipDisks(self, fdRawBoard, fdValidDir, fdCurrentColor, x, y):
         # Placing disk
         fdRawBoard[x, y] = self.drawDisk(x-1, y-1, fdCurrentColor)
+        # time.sleep(1)
  
         # Flipping disks
         # Inputting dir in (y, x) in ValidDir
@@ -743,22 +811,16 @@ class Board:
         message = "This is " + self.strColor[pdCurrentColor] + "'s turn"
         self.message_label.config(text=message)
 
-        # if self.CurrentColor == LIGHT:
-        #     AI_STAT = True
-        #     self.master.after(1000, self.com())
- 
         return pdRawBoard, pdValidPos, pdValidDir, pdCurrentColor, True
 
     def com(self):
-        putDiskIndex = self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), 6)
+        putDiskIndex = self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), copy.copy(self.CurrentColor), DEPTH)
         self.AI_STAT = False
-        # self.testBoard()
         resultValue = self.place_disk(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor, putDiskIndex[0], putDiskIndex[1])
         self.RawBoard = resultValue[0]
         self.ValidPos = resultValue[1]
         self.ValidDir = resultValue[2]
         self.CurrentColor = resultValue[3]
-        # self.testBoard()
 
     """ Updating ValidPos and ValidDir """
     def initValidation(self, ivRawBoard, ivValidPos, ivValidDir, ivCurrentColor):
