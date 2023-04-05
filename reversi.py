@@ -128,18 +128,48 @@ class Board:
  
         self.valuePoints = np.array([
             [0,   0,   0,   0,   0,   0,   0,   0,   0,  0],
-            [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
-            [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
+            # [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
+            # [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
+            [0, 5000, -2000,  20,   5,   5,  20, -2000, 5000,  0],
+            [0, -2000, -4000,  -5,  -5,  -5,  -5, -4000, -2000,  0],
             [0,  20,  -5,  15,   3,   3,  15,  -5,  20,  0],
             [0,   5,  -5,   3,   3,   3,   3,  -5,   5,  0],
             [0,   5,  -5,   3,   3,   3,   3,  -5,   5,  0],
             [0,  20,  -5,  15,   3,   3,  15,  -5,  20,  0],
-            [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
-            [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
+            # [0, -20, -40,  -5,  -5,  -5,  -5, -40, -20,  0],
+            # [0, 120, -20,  20,   5,   5,  20, -20, 120,  0],
+            [0, -2000, -4000,  -5,  -5,  -5,  -5, -4000, -2000,  0],
+            [0, 5000, -2000,  20,   5,   5,  20, -2000, 5000,  0],
             [0,   0,   0,   0,   0,   0,   0,   0,   0,  0]])
+
+        # self.RawBoard = np.array([
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0]])
+
+        # # Initializing ValidPos and ValidDir
+        # returnVal = self.initValidation(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor)
+        # self.RawBoard = returnVal[0]
+        # self.ValidPos = returnVal[1]
+        # self.ValidDir = returnVal[2]
+        # self.CurrentColor = returnVal[3]
+
+        print("Score is : " + str(self.EvaluateDiskStates(self.RawBoard, self.CurrentColor)))
 
     ''' Evaluate disk state '''
     def EvaluateDiskStates(self, edRawBoard, putDiskColor):
+        # Test case 1: When the board is empty -> score is 0 -> OK
+        # Test case 2: The board is with the original state -> score is 0 -> OK
+        # Test case 3: When all the score is the same between dark and light -> score is 0 -> OK
+        # Test case 4: When the board is empty -> score is 0
+        # Test case 5: When the board is empty -> score is 0
         lightScore = 0
         darkScore = 0
         for y in range(10):
@@ -227,7 +257,7 @@ class Board:
         # Runs valuation function in a leaf node
         if depth == 0:
             self.testBoard(gnaRawBoard, gnaValidPos, gnaValidDir)
-            print(self.EvaluateDiskStates(gnaRawBoard, gnaCurrentColor))
+            # print(self.EvaluateDiskStates(gnaRawBoard, gnaCurrentColor))
             return self.EvaluateDiskStates(gnaRawBoard, gnaCurrentColor)
             # return self.EvaluateDiskStates2(gnaRawBoard, gnaValidPos, gnaCurrentColor)
         # Confirms all the squares where a disk can be placed
