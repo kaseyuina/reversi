@@ -4,8 +4,8 @@ import tkinter as tk
 import tkinter.messagebox as mbox
 import sys
 import copy
-import time
- 
+import time 
+
 """ Variables """
 # Square status
 EMPTY = 0
@@ -41,7 +41,6 @@ BOARD_COLOR = 'green'
 DARK_COLOR = 'black'
 LIGHT_COLOR = 'white'
 
-
 """ Board class """
 class Board:
     def __init__(self, master):
@@ -58,6 +57,7 @@ class Board:
 
         # AI status
         self.AI_STAT = False
+        self.DARK_PASS = False
 
         # Set all the squares as empty
         self.RawBoard = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
@@ -77,7 +77,7 @@ class Board:
         # Postion where disk can be placed and direction for flipping
         self.ValidPos = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
         self.ValidDir = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
- 
+
         # Initializing ValidPos and ValidDir
         returnVal = self.initValidation(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor)
         self.RawBoard = returnVal[0]
@@ -147,8 +147,8 @@ class Board:
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  1,  1,  0,  0,  0,  0],
+        #     [0,  0,  0,  0,  1,  1,  1, -1,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -161,15 +161,40 @@ class Board:
         # self.ValidDir = returnVal[2]
         # self.CurrentColor = returnVal[3]
 
-        print("Score is : " + str(self.EvaluateDiskStates(self.RawBoard, self.CurrentColor)))
+        # For EvaluateDiskStates test
+        # print("Score is : " + str(self.EvaluateDiskStates(self.RawBoard, -1)))
+            # Test case 1: When the board is empty -> score is 0 -> OK
+            # Test case 2: The board is with the original state -> score is 0 -> OK
+            # Test case 3: When all the score is the same between dark and light -> score is 0 -> OK
+            # Test case 4: When the board is symmetry -> score is 0 -> OK
+            # Test case 5: When color is the oposite, score becomes negative
+            # -> Dark: 10000, Light: -10000 -> OK
+
+        # Test for SearchNegaAlphaDisk and GetNegaAlphaDisk
+        # self.AI_STAT = True
+        # print(self.SearchNegaAlphaDisk(copy.copy(self.RawBoard), copy.copy(self.ValidPos), copy.copy(self.ValidDir), DARK, 7))
+            # Test case 1: With the initial status -> Returns a correct index -> OK
+            # Test case 2: When depth is different -> depth1: [3, 3], depth2: [3, 4] -> OK
+            # Test case 3: When player is different with the same status -> Dark: [3, 3], Light: [3, 4] -> OK
+            # Test case 4: When the available square is limited -> Returns a correct index -> OK
+
+        # No test case for the following functions since no paramter/return
+            # initReversi
+            # AI_turn
+            # callback
+            # setEvents
+            # createWidgets
+
+        # Test for drawDisk function
+        # self.drawDisk(8, 8, DARK)
+            # Test case 1: Put dark at 1:1 -> OK
+            # Test case 2: Put light at 1:1 -> OK
+            # Test case 3: Put dark at 8:8 -> OK
+            # Test case 4: Put light at 8:8 -> OK
+            # Test case 5: Put dark at 9:9 -> Out of range and no effect on the board -> OK
 
     ''' Evaluate disk state '''
     def EvaluateDiskStates(self, edRawBoard, putDiskColor):
-        # Test case 1: When the board is empty -> score is 0 -> OK
-        # Test case 2: The board is with the original state -> score is 0 -> OK
-        # Test case 3: When all the score is the same between dark and light -> score is 0 -> OK
-        # Test case 4: When the board is empty -> score is 0
-        # Test case 5: When the board is empty -> score is 0
         lightScore = 0
         darkScore = 0
         for y in range(10):
@@ -183,49 +208,49 @@ class Board:
             return lightScore - darkScore
         return darkScore - lightScore
 
-    ''' Improved EvaluateDiskStates '''
-    def EvaluateDiskStates2(self, edRawBoard, edValidPos, putDiskColor):
-        lightScore = 0
-        darkScore = 0
+    # ''' Improved EvaluateDiskStates '''
+    # def EvaluateDiskStates2(self, edRawBoard, edValidPos, putDiskColor):
+    #     lightScore = 0
+    #     darkScore = 0
         
-        # Count mobility and disk difference
-        lightMobility = 0
-        darkMobility = 0
-        lightDisks = 0
-        darkDisks = 0
+    #     # Count mobility and disk difference
+    #     lightMobility = 0
+    #     darkMobility = 0
+    #     lightDisks = 0
+    #     darkDisks = 0
         
-        for y in range(10):
-            for x in range(10):
-                if edRawBoard[x, y] == LIGHT:
-                    lightDisks += 1
-                elif edRawBoard[x, y] == DARK:
-                    darkDisks += 1
-                else:
-                    # Check mobility for empty squares
-                    if edValidPos[x, y] == True:
-                        if putDiskColor == LIGHT:
-                            lightMobility += 1
-                        else:
-                            darkMobility += 1
+    #     for y in range(10):
+    #         for x in range(10):
+    #             if edRawBoard[x, y] == LIGHT:
+    #                 lightDisks += 1
+    #             elif edRawBoard[x, y] == DARK:
+    #                 darkDisks += 1
+    #             else:
+    #                 # Check mobility for empty squares
+    #                 if edValidPos[x, y] == True:
+    #                     if putDiskColor == LIGHT:
+    #                         lightMobility += 1
+    #                     else:
+    #                         darkMobility += 1
         
-                # Add value points
-                score = self.valuePoints[x, y]
-                if edRawBoard[x, y] == LIGHT:
-                    lightScore += score
-                elif edRawBoard[x, y] == DARK:
-                    darkScore += score
+    #             # Add value points
+    #             score = self.valuePoints[x, y]
+    #             if edRawBoard[x, y] == LIGHT:
+    #                 lightScore += score
+    #             elif edRawBoard[x, y] == DARK:
+    #                 darkScore += score
         
-        # Calculate disk difference and mobility difference
-        disksDiff = lightDisks - darkDisks
-        mobilityDiff = lightMobility - darkMobility
+    #     # Calculate disk difference and mobility difference
+    #     disksDiff = lightDisks - darkDisks
+    #     mobilityDiff = lightMobility - darkMobility
         
-        # Calculate final score
-        if putDiskColor == LIGHT:
-            finalScore = lightScore - darkScore + disksDiff + mobilityDiff
-        else:
-            finalScore = darkScore - lightScore + disksDiff + mobilityDiff
+    #     # Calculate final score
+    #     if putDiskColor == LIGHT:
+    #         finalScore = lightScore - darkScore + disksDiff + mobilityDiff
+    #     else:
+    #         finalScore = darkScore - lightScore + disksDiff + mobilityDiff
             
-        return finalScore
+    #     return finalScore
 
 
     ''' This function searches the board by using NegaAlpha algorithm '''
@@ -330,9 +355,26 @@ class Board:
 
     ''' Setting events '''
     def setEvents(self):
-
         # Detecting mouse click on the canvas
         self.canvas.bind('<ButtonPress>', self.click)
+        # Test for showPopup function
+        # self.showPopup("test")
+
+    # def callback(self, event):
+        # self.click(event)
+    
+    ''' Runs when AI's turn '''
+    def AI_turn(self):
+        # AI's turn
+        # self.DARK_PASS = False
+        # while self.DARK_PASS == False:
+        if self.CurrentColor == LIGHT:
+            self.AI_STAT = True
+            print("++++++++++++++++++++++++++++++++++++++++++++")
+            print("++++++++++++++++++++++++++++++++++++++++++++")
+            self.com()
+            self.DARK_PASS = self.resultCheck()
+        
 
     ''' Initializing game '''
     def initReversi(self):
@@ -448,6 +490,8 @@ class Board:
         
         # Closing the popup in 1 second
         popup.after(1500, popup.destroy)
+        # popup.after(1500, lambda: (popup.destroy(), popup.update()))
+        # popup.destroy()
             
     def resultCheck(self):
         # Game over check
@@ -517,6 +561,7 @@ class Board:
             self.ValidDir = returnVal[2]
             self.CurrentColor = returnVal[3]
             self.showPopup(self.strColor[-self.CurrentColor] + "'s turn passed")
+            return True
         
     def click(self, event):
         ''' Operation when the board is clicked '''
@@ -538,15 +583,10 @@ class Board:
 
         else:
             # Game over / pass check
-            self.resultCheck()
+            self.DARK_PASS = self.resultCheck()
 
         # AI's turn
-        if self.CurrentColor == LIGHT:
-            self.AI_STAT = True
-            print("++++++++++++++++++++++++++++++++++++++++++++")
-            print("++++++++++++++++++++++++++++++++++++++++++++")
-            self.com()
-            self.resultCheck()
+        self.canvas.after(100, self.AI_turn)
 
     """ Checking which direction disks can flip """
     def checkValidation(self, cvRawBoard, x, y, color):
