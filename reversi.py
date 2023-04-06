@@ -73,6 +73,7 @@ class Board:
  
         # Current color
         self.CurrentColor = DARK
+        # self.CurrentColor = LIGHT
     
         # Postion where disk can be placed and direction for flipping
         self.ValidPos = np.zeros((BOARD_SIZE + 2, BOARD_SIZE + 2), dtype=int)
@@ -147,19 +148,31 @@ class Board:
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        #     [0,  0,  0,  0,  1,  1,  0,  0,  0,  0],
-        #     [0,  0,  0,  0,  1,  1,  1, -1,  0,  0],
+        #     [0,  0,  0,  0,  1, -1,  0,  0,  0,  0],
+        #     [0,  0,  0,  0, -1, -1,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        #     [0, -1,  1,  0,  0,  0,  0,  0,  0,  0],
         #     [0,  0,  0,  0,  0,  0,  0,  0,  0,  0]])
 
-        # # Initializing ValidPos and ValidDir
-        # returnVal = self.initValidation(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor)
-        # self.RawBoard = returnVal[0]
-        # self.ValidPos = returnVal[1]
-        # self.ValidDir = returnVal[2]
-        # self.CurrentColor = returnVal[3]
+        # Test on resultCheck function
+            # isGameOver check
+                # Changed the initial state to one hand before the game is over
+                # and all disks become dark with the first hand -> it should finish the game
+                # -> OK
+            # Turn pass check (Dark)
+                # Changed the initial state to one hand before the light needs to pass.
+                # with the dark's first hand, light should pass -> OK
+            # Turn pass check (Light)
+                # Changed the initial state to one hand before the light needs to pass.
+                # with the light's first hand, dark should pass -> OK
+                
+        # Initializing ValidPos and ValidDir
+        returnVal = self.initValidation(self.RawBoard, self.ValidPos, self.ValidDir, self.CurrentColor)
+        self.RawBoard = returnVal[0]
+        self.ValidPos = returnVal[1]
+        self.ValidDir = returnVal[2]
+        self.CurrentColor = returnVal[3]
 
         # For EvaluateDiskStates test
         # print("Score is : " + str(self.EvaluateDiskStates(self.RawBoard, -1)))
@@ -357,8 +370,6 @@ class Board:
     def setEvents(self):
         # Detecting mouse click on the canvas
         self.canvas.bind('<ButtonPress>', self.click)
-        # Test for showPopup function
-        # self.showPopup("test")
 
     # def callback(self, event):
         # self.click(event)
@@ -490,8 +501,6 @@ class Board:
         
         # Closing the popup in 1 second
         popup.after(1500, popup.destroy)
-        # popup.after(1500, lambda: (popup.destroy(), popup.update()))
-        # popup.destroy()
             
     def resultCheck(self):
         # Game over check
@@ -577,8 +586,8 @@ class Board:
         self.ValidPos = returnValue[1]
         self.ValidDir = returnValue[2]
         self.CurrentColor = returnValue[3]
+        # Case when invalid square is clicked
         if not returnValue[4]:
-        # if not self.place_disk(x, y):
             self.showPopup('Invalid square')
 
         else:
@@ -587,6 +596,9 @@ class Board:
 
         # AI's turn
         self.canvas.after(100, self.AI_turn)
+
+        # Test for showPopup function
+        # self.showPopup("test")
 
     """ Checking which direction disks can flip """
     def checkValidation(self, cvRawBoard, x, y, color):
