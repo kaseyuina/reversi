@@ -41,6 +41,12 @@ BOARD_COLOR = 'green'
 DARK_COLOR = 'black'
 LIGHT_COLOR = 'white'
 
+cpu_option = False
+
+class Option:
+    def __init__(self):
+        pass
+    
 """ Board class """
 class Board:
     def __init__(self, master):
@@ -971,6 +977,9 @@ class Board:
 
 
 ''' Main code '''
+option = tk.Tk()
+option.title('Option')
+init_option = (option)
 app = tk.Tk()
 app.title('Reversi')
 reversi = Board(app)
