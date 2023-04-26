@@ -41,15 +41,48 @@ BOARD_COLOR = 'green'
 DARK_COLOR = 'black'
 LIGHT_COLOR = 'white'
 
-cpu_option = False
+game_mode = None
 
-class Option:
+class mode_selection:
     def __init__(self):
-        pass
-    
+        # Creating main window
+        root = tk.Tk()
+        root.title("Game Mode Selection")
+
+        # Creating menu label
+        label = tk.Label(root, text="Select Game Mode")
+        label.pack(pady=10)
+
+        # Creating buttons
+        pvp_button = tk.Button(root, text="2 Players", width=15, command=lambda mode="pvp": self.select_mode(mode, root))
+        pvp_button.pack(pady=5)
+
+        cpu_button = tk.Button(root, text="VS CPU", width=15, command=lambda mode="cpu": self.select_mode(mode, root))
+        cpu_button.pack(pady=5)
+
+        # Showing the window
+        root.mainloop()
+
+        # Operations for each game mode
+        if game_mode == "pvp":
+            print("2 Players Mode Selected")
+        elif game_mode == "cpu":
+            print("VS CPU Mode Selected")
+        else:
+            print("No Game Mode Selected")
+            
+    def select_mode(self, mode, root):
+        # Storing selected mode to the global variable
+        global game_mode
+        game_mode = mode
+        # Closing main window
+        root.destroy()
+
 """ Board class """
 class Board:
     def __init__(self, master):
+        # print("ゲームモードは：")
+        # print(game_mode)
         #Parent wedget
         self.master = master
         self.color = { # Dictionary to hold disk color
@@ -211,7 +244,7 @@ class Board:
             # Test case 3: Put dark at 8:8 -> OK
             # Test case 4: Put light at 8:8 -> OK
             # Test case 5: Put dark at 9:9 -> Out of range and no effect on the board -> OK
-
+    
     ''' Evaluate disk state '''
     def EvaluateDiskStates(self, edRawBoard, putDiskColor):
         lightScore = 0
@@ -601,7 +634,8 @@ class Board:
             self.DARK_PASS = self.resultCheck()
 
         # AI's turn
-        self.canvas.after(100, self.AI_turn)
+        if game_mode == 'cpu':
+            self.canvas.after(100, self.AI_turn)
 
         # Test for showPopup function
         # self.showPopup("test")
@@ -977,9 +1011,8 @@ class Board:
 
 
 ''' Main code '''
-option = tk.Tk()
-option.title('Option')
-init_option = (option)
+selection_mode = mode_selection()
+
 app = tk.Tk()
 app.title('Reversi')
 reversi = Board(app)
