@@ -63,13 +63,13 @@ class mode_selection:
         # Showing the window
         root.mainloop()
 
-        # Operations for each game mode
-        if game_mode == "pvp":
-            print("2 Players Mode Selected")
-        elif game_mode == "cpu":
-            print("VS CPU Mode Selected")
-        else:
-            print("No Game Mode Selected")
+        # # Operations for each game mode
+        # if game_mode == "pvp":
+        #     print("2 Players Mode Selected")
+        # elif game_mode == "cpu":
+        #     print("VS CPU Mode Selected")
+        # else:
+        #     print("No Game Mode Selected")
             
     def select_mode(self, mode, root):
         # Storing selected mode to the global variable
